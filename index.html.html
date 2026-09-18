@@ -1,0 +1,1302 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Práctica Interactiva · Matemática II</title>
+</head>
+<body>
+<style>
+  :root{
+    --navy:#1E2761; --navy2:#141B49; --gold:#D4AF37; --gold2:#B5892E;
+    --lightblue:#CADCFC; --gray1:#4A5170; --gray2:#6B7280; --gray3:#9CA3AF;
+    --panel:#F7F8FC; --panel2:#FAFBFE; --border:#E4E8F2; --red:#E63946; --green:#0FA968;
+    --bg:#F3F4FA;
+    color-scheme: light;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:#2A3040;
+    font-family:"Liberation Sans", Arial, sans-serif; font-size:15px; line-height:1.5;
+    min-height:100vh;
+  }
+  h1,h2,h3{font-family:"Liberation Serif","Times New Roman",serif; color:var(--navy); margin:0;}
+  .wrap{max-width:760px; margin:0 auto; padding:22px 16px 60px;}
+
+  .topbar{display:flex; align-items:center; gap:10px; margin-bottom:18px;}
+  .topbar img{width:38px; height:38px; border-radius:6px;}
+  .topbar .brand{font-size:12.5px; color:var(--gray2); letter-spacing:.5px;}
+  .topbar .brand b{color:var(--navy);}
+
+  [hidden]{display:none!important;}
+
+  /* ---- GATE ---- */
+  .gate-card{
+    background:var(--navy); color:#fff; border-radius:14px; padding:34px 26px;
+    text-align:center; margin-top:40px;
+  }
+  .gate-card img{width:60px; height:60px; border-radius:12px; margin-bottom:12px; box-shadow:0 2px 10px rgba(0,0,0,.25);}
+  .gate-card .kicker{font-size:11px; letter-spacing:2px; color:var(--lightblue); text-transform:uppercase; font-weight:bold;}
+  .gate-card h1{color:#fff; font-size:24px; margin:8px 0 6px;}
+  .gate-card .author{color:var(--gold); font-size:13px; font-weight:bold; margin-bottom:16px;}
+  .gate-card p{color:var(--lightblue); font-size:13.5px; margin:0 0 20px;}
+  .gate-form{display:flex; gap:8px; justify-content:center; flex-wrap:wrap;}
+  #codeInput{
+    padding:11px 14px; border-radius:8px; border:none; font-size:15px; width:220px;
+    text-align:center; letter-spacing:1px; text-transform:uppercase;
+  }
+  .btn{
+    padding:11px 20px; border-radius:8px; border:none; font-weight:bold; cursor:pointer;
+    font-family:"Liberation Sans", Arial, sans-serif; font-size:14.5px;
+  }
+  .btn-gold{background:var(--gold); color:var(--navy);}
+  .btn-gold:hover{background:var(--gold2);}
+  .btn-outline{background:transparent; border:1.5px solid var(--lightblue); color:#fff;}
+  #gateError{color:#FFD5D8; font-size:13px; margin-top:12px; min-height:16px;}
+
+  /* ---- HOME ---- */
+  .home-header{
+    background:var(--navy); color:#fff; border-radius:12px; padding:20px 24px; margin-bottom:18px;
+  }
+  .home-header .kicker{font-size:11px; letter-spacing:2px; color:var(--lightblue); text-transform:uppercase; font-weight:bold;}
+  .home-header h1{color:#fff; font-size:21px; margin:4px 0 4px;}
+  .home-header p{color:var(--lightblue); font-size:13px; margin:0; font-style:italic;}
+
+  .topic-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(210px,1fr)); gap:12px;}
+  .topic-card{
+    background:var(--panel2); border:1px solid var(--border); border-radius:12px; padding:16px;
+    cursor:pointer; transition:transform .1s; position:relative;
+  }
+  .topic-card.active:hover{transform:translateY(-2px); border-color:var(--gold);}
+  .topic-card .num{
+    display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px;
+    border-radius:50%; background:var(--navy); color:#fff; font-weight:bold; font-size:13.5px; margin-bottom:8px;
+  }
+  .topic-card.locked{opacity:.55; cursor:default;}
+  .topic-card.locked .num{background:var(--gray3);}
+  .topic-card h3{font-size:14.5px; color:var(--navy); margin-bottom:4px;}
+  .topic-card .tag{
+    font-size:9.5px; font-weight:bold; letter-spacing:.5px; text-transform:uppercase;
+    padding:2px 8px; border-radius:10px; position:absolute; top:14px; right:14px;
+  }
+  .tag.ready{background:#D9F2E6; color:#0B6B47;}
+  .tag.soon{background:#EDEFF6; color:var(--gray2);}
+
+  /* ---- QUIZ ---- */
+  .quiz-top{display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;}
+  .quiz-top .prog{font-size:13px; color:var(--gray2); font-weight:bold;}
+  .quiz-top .score{font-size:13px; color:var(--navy); font-weight:bold;}
+  .progress-bar{height:6px; background:var(--border); border-radius:4px; overflow:hidden; margin-bottom:18px;}
+  .progress-fill{height:100%; background:var(--gold); transition:width .25s;}
+
+  .q-card{background:var(--panel2); border:1px solid var(--border); border-radius:12px; padding:20px;}
+  .q-text{font-size:16.5px; color:var(--navy); font-family:"Liberation Serif",serif; margin-bottom:16px; line-height:1.45;}
+
+  .opt{
+    display:block; width:100%; text-align:left; background:#fff; border:1.5px solid var(--border);
+    border-radius:9px; padding:11px 14px; margin-bottom:9px; cursor:pointer; font-size:14.5px;
+    color:#2A3040; font-family:"Liberation Sans", Arial, sans-serif;
+  }
+  .opt:hover:not(.disabled){border-color:var(--gold);}
+  .opt.correct{border-color:var(--green); background:#E8F9F1; color:#0B6B47; font-weight:bold;}
+  .opt.incorrect{border-color:var(--red); background:#FDECEE; color:#B4232F; font-weight:bold;}
+  .opt.disabled{cursor:default;}
+
+  .feedback{
+    margin-top:12px; padding:12px 14px; border-radius:9px; font-size:13.8px; display:none;
+  }
+  .feedback.show{display:block;}
+  .feedback.ok{background:#E8F9F1; border:1px solid #BEE9D3; color:#0B6B47;}
+  .feedback.bad{background:#FDECEE; border:1px solid #F4C3C9; color:#8A1620;}
+  .feedback b{display:block; margin-bottom:3px; font-size:12.5px; letter-spacing:.5px; text-transform:uppercase;}
+
+  .quiz-actions{margin-top:16px; text-align:right;}
+
+  /* ---- RESULT ---- */
+  .result-card{background:var(--navy); color:#fff; border-radius:14px; padding:32px 26px; text-align:center;}
+  .result-card .kicker{font-size:11px; letter-spacing:2px; color:var(--lightblue); text-transform:uppercase; font-weight:bold;}
+  .result-score{font-size:46px; font-family:"Liberation Serif",serif; color:var(--gold); margin:10px 0 2px; font-weight:bold;}
+  .result-pct{color:var(--lightblue); font-size:14px; margin-bottom:14px;}
+  .result-msg{background:rgba(255,255,255,.08); border-radius:10px; padding:12px 16px; font-size:13.8px; color:#fff; margin-bottom:20px;}
+  .result-actions{display:flex; gap:10px; justify-content:center; flex-wrap:wrap;}
+
+  .submit-box{background:rgba(212,175,55,.12); border:1px solid rgba(212,175,55,.4); border-radius:10px; padding:16px; margin-bottom:18px;}
+  .submit-label{font-size:12.5px; color:var(--gold); font-weight:bold; text-transform:uppercase; letter-spacing:.5px; margin-bottom:10px;}
+  .submit-fields{display:flex; gap:10px; justify-content:center; margin-bottom:12px; flex-wrap:wrap;}
+  .submit-field{background:rgba(255,255,255,.1); border-radius:8px; padding:8px 16px; min-width:110px;}
+  .submit-field span{display:block; font-size:10.5px; color:var(--lightblue); text-transform:uppercase; letter-spacing:.5px;}
+  .submit-field b{display:block; font-size:17px; color:#fff; letter-spacing:.5px; margin-top:2px;}
+  .submit-hint{font-size:11.5px; color:var(--lightblue); margin-top:10px; line-height:1.4;}
+  .submit-box.sent .submit-hint{color:#B7F7D8;}
+  .submit-box.error .submit-hint{color:#ffb3b3;}
+
+  .footer-note{margin-top:30px; padding-top:14px; border-top:1px solid var(--border); font-size:11px; color:var(--gray3); text-align:center; font-style:italic;}
+
+  /* ---- ADMIN ---- */
+  .admin-item{background:var(--panel2); border:1px solid var(--border); border-radius:10px; margin-bottom:8px; overflow:hidden;}
+  .admin-item-head{display:flex; justify-content:space-between; align-items:center; padding:12px 16px; cursor:pointer;}
+  .admin-item-head:hover{background:var(--panel);}
+  .admin-item-name{font-weight:bold; color:var(--navy); font-size:14.5px;}
+  .admin-item-summary{font-size:12.5px; color:var(--gray2);}
+  .admin-item-detail{padding:0 16px 14px;}
+  .admin-empty{font-size:12.5px; color:var(--gray3); font-style:italic; margin:0;}
+  .admin-table{width:100%; border-collapse:collapse; font-size:13px;}
+  .admin-table th{text-align:left; color:var(--gray2); font-size:11px; text-transform:uppercase; letter-spacing:.5px; padding:6px 8px; border-bottom:1.5px solid var(--border);}
+  .admin-table td{padding:7px 8px; border-bottom:1px solid var(--border); color:#2A3040;}
+  .admin-status{text-align:center; color:var(--gray2); font-size:13.5px; padding:24px 0;}
+  .admin-error{color:#B4232F;}
+</style>
+
+<div class="wrap">
+
+  <!-- GATE -->
+  <div id="screen-gate">
+    <div class="gate-card">
+      <img id="logoGate" alt="Aprender Económicas">
+      <div class="kicker">Aprender Económicas · Matemática II</div>
+      <h1>Práctica Interactiva</h1>
+      <div class="author">Gustavo Lugones · Contador Público Nacional</div>
+      <p>Ingresá el código que te dio tu profesor para entrar.</p>
+      <div class="gate-form">
+        <input id="codeInput" type="text" placeholder="CÓDIGO" maxlength="30" autocomplete="off">
+        <button class="btn btn-gold" onclick="tryEnter()">Entrar</button>
+      </div>
+      <div id="gateError"></div>
+    </div>
+  </div>
+
+  <!-- DISABLED (deshabilitado temporalmente, ej. durante un parcial) -->
+  <div id="screen-disabled" hidden>
+    <div class="gate-card">
+      <img id="logoDisabled" alt="Aprender Económicas">
+      <div class="kicker">Aprender Económicas · Matemática II</div>
+      <h1>Práctica no disponible</h1>
+      <div class="author">Gustavo Lugones · Contador Público Nacional</div>
+      <p>Este cuestionario está deshabilitado temporalmente. Volvé a intentarlo más tarde.</p>
+    </div>
+  </div>
+
+  <!-- HOME -->
+  <div id="screen-home" hidden>
+    <div class="topbar">
+      <img id="logoHome" alt="logo">
+      <div class="brand"><b>Aprender Económicas</b> · Gustavo Lugones, CPN</div>
+    </div>
+    <div class="home-header">
+      <div class="kicker">Matemática II · Primer Parcial</div>
+      <h1>Elegí un tema para practicar</h1>
+      <p>Guía 1 a Guía 7 · 15 preguntas por sesión (10 prácticas + 5 de teoría) · corrección al instante</p>
+    </div>
+    <div class="topic-grid" id="topicGrid"></div>
+    <div class="footer-note">© Gustavo Lugones, CPN — Aprender Económicas · Material de práctica para uso exclusivo de sus alumnos.</div>
+  </div>
+
+  <!-- QUIZ -->
+  <div id="screen-quiz" hidden>
+    <div class="topbar">
+      <img id="logoQuiz" alt="logo">
+      <div class="brand"><b>Aprender Económicas</b> · <span id="quizTopicName"></span></div>
+    </div>
+    <div class="quiz-top">
+      <div class="prog" id="quizProg">Pregunta 1 de 10</div>
+      <div class="score" id="quizScore">Aciertos: 0</div>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:10%"></div></div>
+    <div class="q-card">
+      <div class="q-text" id="qText"></div>
+      <div id="qOptions"></div>
+      <div class="feedback" id="qFeedback"></div>
+    </div>
+    <div class="quiz-actions">
+      <button class="btn btn-gold" id="nextBtn" style="display:none" onclick="nextQuestion()">Siguiente</button>
+    </div>
+  </div>
+
+  <!-- ADMIN (panel del profesor, solo entra con el código GUSTAVOL) -->
+  <div id="screen-admin" hidden>
+    <div class="topbar">
+      <img id="logoAdmin" alt="logo">
+      <div class="brand"><b>Aprender Económicas</b> · Panel del profesor</div>
+    </div>
+    <div class="home-header">
+      <div class="kicker">Matemática II · Primer Parcial</div>
+      <h1>Resultados por alumno</h1>
+      <p>Tocá un alumno para ver qué guías intentó, cuántas veces entró y qué puntaje sacó en cada intento.</p>
+    </div>
+    <div id="adminBody"></div>
+    <div class="footer-note"><button class="btn btn-outline" onclick="location.reload()">Cerrar panel</button></div>
+  </div>
+
+  <!-- RESULT -->
+  <div id="screen-result" hidden>
+    <div class="result-card">
+      <div class="kicker" id="resultTopic"></div>
+      <div class="result-score" id="resultScore">0 / 10</div>
+      <div class="result-pct" id="resultPct"></div>
+      <div class="result-msg" id="resultMsg"></div>
+      <div class="submit-box" id="submitBox">
+        <div class="submit-label">Tu resultado</div>
+        <div class="submit-fields">
+          <div class="submit-field"><span>Código</span><b id="submitCode"></b></div>
+          <div class="submit-field"><span>Puntaje</span><b id="submitScore"></b></div>
+        </div>
+        <div class="submit-hint" id="submitStatus">Enviando resultado a tu profesor...</div>
+        <button class="btn btn-outline" id="submitBtn" onclick="sendResultManual()">Confirmar envío manualmente</button>
+      </div>
+      <div class="result-actions">
+        <button class="btn btn-gold" onclick="retryTopic()">Repetir este tema</button>
+        <button class="btn btn-outline" onclick="goHome()">Volver a los temas</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const STUDENTS = {
+  "ABIGAILS": "Abigail Saravia",
+  "ABRILS": "Abril Sultani",
+  "AGUSTING": "Agustin Gimenez",
+  "ALVAROR": "Alvaro Rodiguez",
+  "ANAHIRR": "Anahir Rearte",
+  "CAMILAC": "Camila Cansinos",
+  "CAMILAM": "Camila Medina Vera",
+  "CONSTANZAH": "Constanza Herrero",
+  "ELIG": "Eli Gambarte",
+  "ELIASB": "Elias Brandan",
+  "ESTEBANB": "Esteban Boix",
+  "EVELINN": "Evelin Nieva",
+  "FABRIM": "Fabri Marañon",
+  "FELIPEH": "Felipe Herrera",
+  "IARAR": "Iara Rodriguez",
+  "IGNACIOO": "Ignacio Olejnik",
+  "JOAQUINR": "Joaquin Ruiz",
+  "LARAB": "Lara Barrionuevo",
+  "LARAG": "Lara Graiff",
+  "LEANDROG": "Leandro Gorostizu",
+  "LISANDROI": "Lisandro Iñigo",
+  "LUCASC": "Lucas Chaya",
+  "LUCASZ": "Lucas Zaraza",
+  "LUCIAL": "Lucia Lucena",
+  "LUCIANAU": "Luciana Urueña",
+  "LUISV": "Luis Villagra",
+  "LUZA": "Luz Alvarez",
+  "MALCONR": "Malcon Romano",
+  "MARIAB": "Maria Belen Pedraza",
+  "MARIAL": "Maria Luz Martin",
+  "MARIANAC": "Mariana Carrizo",
+  "MATIASY": "Matias Yonsen",
+  "MAXIC": "Maxi Caceres",
+  "MILAGROSG": "Milagros Gonzalez Paz",
+  "MOREP": "More Padilla",
+  "NAHUELV": "Nahuel Vera",
+  "NICOLEO": "Nicole Orieta",
+  "OCTAVIOA": "Octavio Albornoz",
+  "PABLOM": "Pablo Mauricio Gonzalez",
+  "PATOT": "Pato Tezeira",
+  "PAULAS": "Paula Sandoval",
+  "ROSARIOA": "Rosario Artaza",
+  "SABRINAC": "Sabrina Carranza",
+  "SOFIO": "Sofi Oli",
+  "SOFIAA": "Sofia Altamiranda",
+  "SOFIAR": "Sofia de la Rosa",
+  "SOLANAA": "Solana Alagastin",
+  "SOLANAM": "Solana Martinez",
+  "THIAGOP": "Thiago Pereira",
+  "TOMASM": "Tomas Mamprin",
+  "VICKYZ": "Vicky Zambrano",
+  "YADHIRAE": "Yadhira Elias",
+  "MILENAC": "Milena Concha",
+  "JULIETAT": "Julieta Torres",
+  "GUSTAVOL": "Gustavo Lugones",
+};
+let currentStudent = null; // {code, name}
+let lastSubmitValue = ""; // valor completo (con tema) que se envía al form, separado del texto que se muestra en pantalla
+const RESULTS_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLScpdqqr94KV3-CuEDR3L0w2Q7uLbIIdpMnYi2Qt7aHuKftisA/viewform";
+const RESULTS_FORM_ACTION = "https://docs.google.com/forms/d/e/1FAIpQLScpdqqr94KV3-CuEDR3L0w2Q7uLbIIdpMnYi2Qt7aHuKftisA/formResponse";
+const ENTRY_CODIGO = "entry.1001672919";
+const ENTRY_PUNTAJE = "entry.168320209";
+const ENTRY_LOG_FORM_ACTION = "https://docs.google.com/forms/d/e/1FAIpQLSeruyjj8YcG6s9-2qLJBOFLTJ6z_aqWsCXkHkuB4crYvmGysQ/formResponse";
+const ENTRY_LOG_CODIGO = "entry.1076467819";
+
+// ---- Panel del profesor ----
+// El código GUSTAVOL ya no rinde el cuestionario: entra directo a un panel de
+// resultados por alumno (ver goAdmin()/loadAdminData() más abajo). Ese panel lee
+// los datos desde un Google Apps Script "intermediario" (no desde la planilla
+// directamente), para no tener que dejar la planilla de resultados con un link
+// público. Instrucciones de despliegue: ver Code.gs.
+const TEACHER_CODE = "GUSTAVOL";
+const ADMIN_DATA_URL = ""; // Gustavo: pegá acá la URL que termina en /exec, una vez desplegado el Apps Script (ver Code.gs)
+const LOGO_SRC = "data:image/jpeg;base64,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";
+
+const TOPICS = [
+  {id:"g1", num:1, name:"Funciones exponenciales y logarítmicas", ready:true},
+  {id:"g2", num:2, name:"Funciones especiales (valor absoluto, por partes)", ready:true},
+  {id:"g3", num:3, name:"Álgebra de funciones, composición e inversa", ready:true},
+  {id:"g4", num:4, name:"Límite de funciones", ready:true},
+  {id:"g5", num:5, name:"Continuidad de funciones", ready:true},
+  {id:"g6", num:6, name:"Derivada de funciones", ready:true},
+  {id:"g7", num:7, name:"Derivación implícita y logarítmica", ready:true},
+];
+
+const QUESTION_BANKS = {
+  g1: [
+    {text:"¿Cuál es el dominio de f(x) = 5ˣ / (x − 3)?",
+     options:["ℝ","ℝ − {3}","(3, +∞)","(−∞, 3)","ℝ − {0}"], correct:1,
+     why:"5ˣ está definida para todo real, pero el cociente exige x − 3 ≠ 0, es decir x ≠ 3."},
+    {text:"¿Cuál es el rango de g(x) = −2ˣ + 4?",
+     options:["(−∞, 4)","(4, +∞)","(−∞, 4]","ℝ","(0, 4)"], correct:0,
+     why:"2ˣ toma todos los valores en (0, +∞); por lo tanto −2ˣ toma valores en (−∞, 0), y sumando 4 el rango queda (−∞, 4), sin incluir el 4."},
+    {text:"Resolvé la ecuación 3^(x+1) = 81.",
+     options:["x = 3","x = 4","x = 2","x = 27","x = 1/3"], correct:0,
+     why:"81 = 3⁴, entonces x + 1 = 4, de donde x = 3."},
+    {text:"Si f(x) = 2^(x−3) + 5, ¿cuánto vale f(0)?",
+     options:["41/8","5","8","1/8","2/5"], correct:0,
+     why:"f(0) = 2⁻³ + 5 = 1/8 + 5 = 41/8."},
+    {text:"¿Cuál de las siguientes funciones es decreciente en todo su dominio?",
+     options:["f(x) = 4ˣ","f(x) = (2/5)ˣ","f(x) = eˣ","f(x) = 3ˣ + 1","f(x) = 2·5ˣ"], correct:1,
+     why:"Una exponencial aˣ es decreciente solo cuando 0 < a < 1; acá 2/5 cumple esa condición. Las demás tienen base mayor que 1."},
+    {text:"¿Cuál es el dominio de f(x) = log₅(2x − 6)?",
+     options:["(3, +∞)","(−3, +∞)","(6, +∞)","ℝ","(−∞, 3)"], correct:0,
+     why:"El argumento debe ser positivo: 2x − 6 > 0 ⇒ x > 3."},
+    {text:"¿Cuál es el dominio de f(x) = log₂((x+1)/(x−4))?",
+     options:["(−∞, −1) ∪ (4, +∞)","(−1, 4)","ℝ − {−1, 4}","(−∞, −1)","(4, +∞)"], correct:0,
+     why:"El cociente debe ser positivo, lo que ocurre cuando numerador y denominador tienen el mismo signo: x < −1 o x > 4."},
+    {text:"¿Cuál es el rango de f(x) = log₄x − 5?",
+     options:["ℝ","(−5, +∞)","(5, +∞)","(0, +∞)","(−∞, −5)"], correct:0,
+     why:"El logaritmo ya recorre todo ℝ; restar una constante no cambia el rango."},
+    {text:"Resolvé la ecuación log₃(x) = 4.",
+     options:["x = 81","x = 12","x = 64","x = 3","x = 1/81"], correct:0,
+     why:"log₃(x) = 4 equivale a x = 3⁴ = 81."},
+    {text:"Si f(x) = log₇(x + 2), ¿cuánto vale f(0)?",
+     options:["log₇2 (≈ 0,36)","No existe, porque x = 0 no está en el dominio","0","1","−log₇2"], correct:0,
+     why:"El dominio exige x + 2 > 0, es decir x > −2; x = 0 sí cumple. f(0) = log₇(0+2) = log₇2."},
+    {text:"¿Cuál es la asíntota de f(x) = log₃(x − 5) + 2?",
+     options:["x = 5","x = −5","x = 2","y = 2","x = 0"], correct:0,
+     why:"El dominio es x > 5; la recta vertical x = 5 es la asíntota. El +2 solo desplaza la gráfica verticalmente."},
+    {text:"¿Cuál es la asíntota horizontal de f(x) = 3^(x+2) − 7?",
+     options:["y = −7","y = 7","y = −2","x = −7","y = 0"], correct:0,
+     why:"Cuando x → −∞, 3^(x+2) → 0, entonces f(x) → −7."},
+    {text:"¿Por qué toda función y = aˣ, con a > 0 y a ≠ 1, es biunívoca en su dominio?",
+     options:["Porque es estrictamente monótona (creciente o decreciente) en todo su dominio","Porque su gráfica es una recta","Porque su dominio es ℝ","Porque siempre pasa por (0, 1)","Porque su rango es (0, +∞)"], correct:0,
+     why:"Toda función estrictamente monótona en su dominio es inyectiva; por eso ninguna exponencial repite un valor de y para dos x distintos."},
+    {text:"¿Cuál es el dominio de f(x) = log₅(x²)?",
+     options:["ℝ − {0}","(0, +∞)","ℝ","(−∞, 0)","{0}"], correct:0,
+     why:"Se necesita x² > 0, lo cual se cumple para cualquier x salvo x = 0."},
+    {text:"¿Tienen el mismo dominio f(x) = 3·log₂x y g(x) = log₂(x³)?",
+     options:["Sí, ambas tienen dominio (0, +∞)","No, el dominio de g es ℝ − {0}","No, el dominio de g es ℝ","No, el dominio de f es ℝ","No, ninguna tiene el mismo tipo de dominio"], correct:0,
+     why:"A diferencia de x², el cubo x³ conserva el signo de x: x³ > 0 exactamente cuando x > 0, igual que el dominio de log₂x. Por eso, a diferencia de log(x²), acá sí coinciden."},
+    {text:"¿Cuál es la definición de función biunívoca (inyectiva)?",
+     options:["Para todo x₁≠x₂ en el dominio, f(x₁)≠f(x₂)","Para cada x del dominio existe un único valor f(x)","El rango de f es igual a ℝ","f es continua en todo su dominio","f tiene inversa aunque no sea inyectiva"], correct:0, type:"teoria",
+     why:"Esa es la definición formal de inyectividad: valores distintos de x deben producir siempre valores distintos de y."},
+    {text:"¿Por qué la función y=aˣ (con a>0, a≠1) nunca toma valores negativos ni cero?",
+     options:["Porque una potencia de base positiva siempre da un resultado positivo","Porque el exponente x siempre es positivo","Porque a siempre es mayor que 1","Porque el dominio excluye los números negativos","Porque toda función exponencial es par"], correct:0, type:"teoria",
+     why:"Para cualquier base a>0, elevarla a cualquier exponente real siempre da un resultado positivo; por eso el rango de aˣ es (0,+∞)."},
+    {text:"¿Qué relación hay entre las funciones y=aˣ e y=logₐx?",
+     options:["Son funciones inversas entre sí","Son la misma función escrita de dos formas distintas","Tienen el mismo dominio","Ambas son decrecientes siempre","No tienen ninguna relación"], correct:0, type:"teoria",
+     why:"logₐx se define precisamente como la función inversa de aˣ; por eso sus gráficas son simétricas respecto de la recta y=x."},
+    {text:"Si en logₐ(g(x)) se reemplaza el argumento por una expresión g(x) más compleja, ¿qué ocurre con el dominio?",
+     options:["El dominio pasa a ser el conjunto de x donde g(x)>0","El dominio sigue siendo (0,+∞), sin importar g(x)","El dominio pasa a ser todo ℝ","El dominio depende solo del signo de a","El dominio nunca cambia al componer funciones"], correct:0, type:"teoria",
+     why:"El logaritmo exige que su argumento sea positivo; al reemplazarlo por g(x), la condición pasa a ser g(x)>0, y el dominio se ajusta a esa condición."},
+    {text:"¿Por qué la ecuación aˣ = b (con a>0, a≠1, y b>0) tiene siempre una única solución?",
+     options:["Porque y=aˣ es biunívoca (estrictamente monótona) y su rango es (0,+∞), que contiene a b","Porque toda ecuación exponencial tiene una única solución por definición, sin excepción","Porque b siempre puede escribirse como una potencia entera de a","Porque el logaritmo no está definido para valores negativos","Porque a siempre es un número entero"], correct:0, type:"teoria",
+     why:"Al ser aˣ estrictamente monótona (y por lo tanto inyectiva) con rango (0,+∞), cada valor positivo b es alcanzado por un único x, que es x=logₐb."},
+    {text:"¿Cuál de las siguientes propiedades del logaritmo es correcta?",
+     options:["logₐ(x·y) = logₐx + logₐy","logₐ(x+y) = logₐx + logₐy","logₐ(x)·logₐ(y) = logₐ(x+y)","logₐ(x/y) = logₐx · logₐy","logₐ(xⁿ) = n + logₐx"], correct:0, type:"teoria",
+     why:"El logaritmo transforma un producto en una suma: logₐ(x·y)=logₐx+logₐy. Las otras opciones son errores comunes que mezclan las propiedades de producto, cociente y potencia."},
+    {text:"¿Cuál es el dominio de f(x) = log₃(9 − x²)?",
+     options:["(−3, 3)","(−3, 3]","[−3, 3]","(−∞,−3) ∪ (3,+∞)","(0, 3)"], correct:0, type:"avanzada",
+     why:"El argumento debe ser positivo: 9−x²>0 ⇒ x²<9 ⇒ −3<x<3. Es la misma condición de siempre para el dominio de un logaritmo (argumento positivo), solo que acá hay que resolver una inecuación cuadrática en vez de una lineal."},
+    {text:"¿Cuál es la asíntota horizontal de f(x) = −(1/2)ˣ⁺¹ + 4?",
+     options:["y = 4","y = −4","y = 1","x = 4","y = 0"], correct:0, type:"avanzada",
+     why:"Cuando x→+∞, (1/2)ˣ⁺¹→0, entonces f(x)→−0+4=4. El signo negativo y el desplazamiento no cambian la asíntota horizontal, que sigue estando en y=4."},
+    {text:"¿Cuál es el dominio de f(x) = [log₂(x+3)] / (x−1)?",
+     options:["(−3, 1) ∪ (1, +∞)","(−3, +∞)","ℝ − {1}","(1, +∞)","(−3, 1)"], correct:0, type:"avanzada",
+     why:"Hacen falta dos condiciones sobre la misma función: que el argumento del logaritmo sea positivo (x+3>0 ⇒ x>−3) y que el denominador no se anule (x≠1). Combinando ambas: (−3,1)∪(1,+∞)."},
+    {text:"¿En qué intervalo es decreciente la función f(x) = 3 − 2ˣ?",
+     options:["En todo su dominio (ℝ)","(−∞, 0)","(0, +∞)","Nunca es decreciente","Solo para x<3"], correct:0, type:"avanzada",
+     why:"2ˣ es estrictamente creciente en todo ℝ; multiplicarla por −1 la vuelve estrictamente decreciente en todo ℝ, y restar una constante solo desplaza verticalmente sin afectar el crecimiento. Por eso f es decreciente en todo su dominio, sin excepción."},
+    {text:"¿Tienen el mismo dominio las funciones f(x) = log₃(x−2) y g(x) = log₃((x−2)²)?",
+     options:["No: el dominio de f es (2,+∞) y el de g es ℝ−{2}, mucho más amplio","Sí, ambas tienen dominio (2,+∞)","Sí, ambas tienen dominio ℝ−{2}","No, ninguna de las dos tiene dominio real","Sí, porque elevar al cuadrado no cambia el signo del argumento"], correct:0, type:"avanzada",
+     why:"f exige x−2>0 ⇒ x>2. En cambio g exige (x−2)²>0, que se cumple para cualquier x≠2 (incluso con x−2 negativo, porque el cuadrado lo vuelve positivo): dominio ℝ−{2}, mucho más amplio que el de f. Es el mismo tipo de comparación de dominios que aparece en tu cartilla."},
+    {text:"¿En qué intervalo es negativa la función f(x) = log₂(x−1)?",
+     options:["(1, 2)","(0, 1)","(2, +∞)","(−∞, 1)","(1, +∞)"], correct:0, type:"avanzada",
+     why:"El dominio es x>1. log₂(t)<0 cuando 0<t<1; acá t=x−1, entonces 0<x−1<1 ⇒ 1<x<2. Es el mismo análisis de intervalos de positividad/negatividad que se pide para cada función en tu cartilla."},
+  ],
+  g2: [
+    {text:"¿Cuál es el vértice de f(x) = 3|x+2| − 5?",
+     options:["(−2, −5)","(2, −5)","(−2, 5)","(2, 5)","(−5, −2)"], correct:0,
+     why:"En f(x)=a|x−h|+k el vértice es (h,k). Acá x+2 = x−(−2), y k=−5, así que el vértice es (−2,−5)."},
+    {text:"¿Cuál es el rango de f(x) = −2|x−1| + 6?",
+     options:["(−∞, 6]","[6, +∞)","(−∞, 6)","ℝ","[−6, 6]"], correct:0,
+     why:"Como a=−2<0, la V está invertida y k=6 es el valor máximo: el rango es (−∞,6]."},
+    {text:"¿Cuántos ceros tiene f(x) = |x+3| − 4?",
+     options:["2","0","1","3","Infinitos"], correct:0,
+     why:"|x+3|=4 tiene dos soluciones: x+3=4 ⇒ x=1, y x+3=−4 ⇒ x=−7."},
+    {text:"¿Cuántos ceros tiene f(x) = |x−2| + 5?",
+     options:["0","1","2","Infinitos","No se puede determinar"], correct:0,
+     why:"|x−2| ≥ 0 siempre, y nunca puede igualar a −5; por lo tanto la ecuación |x−2|=−5 no tiene solución."},
+    {text:"¿Cuánto vale f(2) si f(x) = { 2x+1 si x<2 ; x²−1 si x≥2 }?",
+     options:["3","5","4","1","0"], correct:0,
+     why:"x=2 cumple x≥2, así que se usa la segunda rama: f(2) = 2²−1 = 3."},
+    {text:"¿En qué intervalo es decreciente la función f(x) = |x+4| − 1?",
+     options:["(−∞, −4)","(−4, +∞)","(−∞, +∞)","(−1, +∞)","(−∞, −1)"], correct:0,
+     why:"Para x<−4, x+4<0, entonces |x+4|=−(x+4), una recta de pendiente −1 (decreciente). Para x>−4 la rama es x+4, de pendiente +1 (creciente): el vértice en x=−4 es el mínimo."},
+    {text:"¿Es biunívoca (inyectiva) la función f(x) = |x−3| en su dominio (todo ℝ)?",
+     options:["No: por ejemplo f(1)=2 y f(5)=2, dos x distintos con la misma imagen","Sí, porque es una función de una sola fórmula","Sí, porque su gráfica es continua","No, porque no tiene ceros","Sí, siempre que a≠0"], correct:0,
+     why:"Al tener forma de V, cada valor de y (salvo el vértice) se alcanza dos veces: f(1)=|1−3|=2 y f(5)=|5−3|=2, dos x distintos con la misma imagen, así que no es inyectiva."},
+    {text:"¿Cuál es el rango de f(x) = |x| / x²?",
+     options:["(0, +∞)","ℝ","ℝ − {0}","(−∞, 0)","[0, +∞)"], correct:0,
+     why:"Para x≠0, |x|/x² = |x|/|x|² = 1/|x|, que toma todos los valores positivos: rango (0,+∞)."},
+    {text:"¿Cuál es el dominio de f(x) = |x−4| / (x−4)?",
+     options:["ℝ − {4}","ℝ","(4, +∞)","(−∞, 4)","{4}"], correct:0,
+     why:"El denominador se anula en x=4; aunque el numerador también se anula ahí, x=4 queda excluido del dominio."},
+    {text:"Con f(x) = |x−4|/(x−4), ¿cuánto vale f(x) para x > 4?",
+     options:["1","−1","0","x−4","Indefinido"], correct:0,
+     why:"Para x>4, x−4>0, entonces |x−4|=x−4, y el cociente (x−4)/(x−4) = 1."},
+    {text:"Si f(x) = |x−4| / (x−4), ¿cuánto vale f(x) para x < 4?",
+     options:["−1","1","0","4−x","Indefinido"], correct:0,
+     why:"Para x<4, x−4<0, entonces |x−4| = −(x−4) = 4−x, y el cociente es −(x−4)/(x−4) = −1."},
+    {text:"¿Cuál de las siguientes afirmaciones sobre f(x) = a|x−h|+k es verdadera?",
+     options:["Su gráfica siempre tiene forma de V (o V invertida), con vértice en (h,k)","Es biunívoca en todo su dominio","Su dominio nunca es todo ℝ","Siempre tiene exactamente un cero","Su rango es siempre ℝ"], correct:0,
+     why:"Toda función valor absoluto lineal tiene gráfica en V con vértice (h,k); no es inyectiva en todo su dominio, su dominio es siempre ℝ, y puede tener 0, 1 o 2 ceros según el caso."},
+    {text:"Sea g(x) = { 3/(x−4) si x<4 ; 2x−1 si x≥4 }. ¿Cuál es el rango de la rama x<4 (es decir, de y=3/(x−4) restringida a x<4)?",
+     options:["(−∞, 0)","(0, +∞)","(−∞, 0]","ℝ − {0}","(−3, 0)"], correct:0,
+     why:"Para x<4, x−4<0, entonces 3/(x−4) es siempre negativo. Cuando x→−∞, el cociente tiende a 0⁻; cuando x→4⁻, tiende a −∞. Al ser estrictamente decreciente en ese tramo, recorre todo el intervalo (−∞,0), sin incluir el 0."},
+    {text:"¿Cuál es el dominio de f(x) = { √(x+2) si x≤2 ; 1/(x−5) si x>2 }?",
+     options:["[−2, +∞) − {5}","ℝ − {5}","[−2, 2]","(2, +∞)","ℝ"], correct:0,
+     why:"La primera rama exige x≥−2, combinado con x≤2 da [−2,2]. La segunda exige x≠5, combinado con x>2 da (2,5)∪(5,+∞). La unión es [−2,+∞) menos el punto x=5."},
+    {text:"¿Cuántos ceros tiene f(x) = −3|x+1| + 12?",
+     options:["2","0","1","4","Depende"], correct:0,
+     why:"Como a<0 y k>0, la V invertida cruza el eje x dos veces: −3|x+1|=−12 ⇒ |x+1|=4 ⇒ x=3 o x=−5."},
+    {text:"¿Cuál es la definición de |x| por partes?",
+     options:["|x| = x si x≥0; |x| = −x si x<0","|x| = x si x≥0; |x| = x si x<0","|x| = −x siempre, sin importar el signo de x","|x| = x² para todo x real","|x| = x si x>0; |x| = 0 si x≤0"], correct:0, type:"teoria",
+     why:"El valor absoluto se define por partes: coincide con x cuando x es positivo o cero, y con su opuesto (−x) cuando x es negativo, para que el resultado sea siempre no negativo."},
+    {text:"¿Por qué la función f(x) = a|x−h|+k nunca es inyectiva en todo su dominio (ℝ)?",
+     options:["Porque toma el mismo valor de y para dos valores de x simétricos respecto de x=h","Porque su dominio no es ℝ","Porque siempre es creciente en todo su dominio","Porque no tiene vértice","Porque el valor absoluto no está definido para x negativos"], correct:0, type:"teoria",
+     why:"Al ser una V, la rama izquierda y la derecha son reflejo una de la otra respecto de x=h; por ejemplo f(h+1) y f(h−1) dan el mismo resultado."},
+    {text:"Al definir una función por partes (tramos), ¿qué condición deben cumplir los intervalos de las distintas ramas?",
+     options:["Deben cubrir todo el dominio buscado sin superponerse: cada x pertenece a un único tramo","Deben tener todos la misma longitud","Deben ser todos intervalos cerrados","Deben superponerse en al menos un punto","Deben ser simétricos respecto del origen"], correct:0, type:"teoria",
+     why:"Para que la función esté bien definida, cada valor de x debe caer en exactamente una rama; si dos ramas se superpusieran, f(x) tendría dos valores distintos para el mismo x."},
+    {text:"En general, ¿por qué una función definida por partes puede dejar de ser biunívoca aunque cada rama por separado sí lo sea?",
+     options:["Porque dos ramas distintas pueden alcanzar el mismo valor de y para dos x de tramos diferentes","Porque una función por partes nunca puede ser biunívoca","Porque cada rama debe tener el mismo dominio","Porque las ramas no pueden ser todas crecientes","Porque el valor absoluto siempre lo impide"], correct:0, type:"teoria",
+     why:"Aunque cada rama sea, por ejemplo, estrictamente creciente por separado, el mismo valor de y podría repetirse entre una rama y otra (en distintos tramos de x), rompiendo la inyectividad global de la función."},
+    {text:"¿Por qué al simplificar f(x) = |x| / x² se obtiene 1/|x| (para x≠0)?",
+     options:["Porque x² = |x|² para todo x real","Porque |x| = x siempre, sin importar el signo","Porque x² = |x| siempre","Porque dividir por x² invierte el signo del resultado","Porque |x|/x² = x directamente"], correct:0, type:"teoria",
+     why:"Como x² es siempre igual a |x|², se puede escribir |x|/x² = |x|/|x|² = 1/|x|."},
+    {text:"Si f(x) = a|x−h|+k con a>0, ¿qué representa el punto (h,k) en la gráfica?",
+     options:["El valor mínimo de la función (el vértice de la V)","El valor máximo de la función","Un punto de discontinuidad","Una asíntota de la función","Un cero de la función en todos los casos"], correct:0, type:"teoria",
+     why:"Cuando a>0, la V se abre hacia arriba y su punto más bajo, el vértice (h,k), es justamente el mínimo de la función."},
+    {text:"Si f(x) = −|x−h|+k, con h>0 y k>0, ¿cuántos ceros tiene f, sin importar el valor específico de h?",
+     options:["Siempre dos, x=h±k","Siempre uno","Ninguno","Depende del valor de h","Depende del valor de k, pero no de h, y podría no tener ninguno"], correct:0, type:"avanzada",
+     why:"−|x−h|+k=0 ⇒ |x−h|=k. Como k>0, esa ecuación siempre tiene exactamente dos soluciones (x=h±k), sin importar el signo o el valor de h: el vértice se corre, pero la cantidad de ceros no cambia."},
+    {text:"La función f(x) = |x−6| tiene dominio restringido a x > 2. ¿Cuántos ceros tiene en ese dominio?",
+     options:["Uno, en x=6","Ninguno, porque el vértice queda muy lejos del límite del dominio","Dos","Infinitos","No se puede determinar sin graficar"], correct:0, type:"avanzada",
+     why:"El único candidato a cero de |x−6| es el vértice x=6, y 6>2 sí pertenece al dominio restringido; por eso hay un cero único ahí."},
+    {text:"Sea h(x) = −|x−1|+2, definida solo para −1 ≤ x ≤ 2. ¿Cuál es el rango de h en ese dominio restringido?",
+     options:["[0, 2]","[1, 2]","(−∞, 2]","[0, 1]","[−1, 2]"], correct:0, type:"avanzada",
+     why:"El vértice (1,2) es el máximo. En los extremos: h(−1)=0 y h(2)=1; como el mínimo del intervalo se alcanza en x=−1 (h=0, la distancia mayor al vértice), el rango completo es [0,2]."},
+    {text:"Simplificá f(x) = |x+2| / (x²−4) para x > −2 (con x≠2).",
+     options:["f(x) = 1/(x−2)","f(x) = −1/(x−2)","f(x) = 1/(x+2)","f(x) = (x+2)/(x−2)","f(x) no se puede simplificar"], correct:0, type:"avanzada",
+     why:"x²−4=(x−2)(x+2). Para x>−2, |x+2|=x+2, así que f(x)=(x+2)/[(x−2)(x+2)]=1/(x−2)."},
+    {text:"Sea g(x) = −|x−3|+6, definida para 0 ≤ x ≤ 5. ¿Es g biunívoca (inyectiva) en ese dominio?",
+     options:["No: por ejemplo g(1)=4 y g(5)=4, con 1≠5","Sí, porque es estrictamente decreciente en todo el dominio","Sí, porque el dominio está acotado","No, porque el dominio no es simétrico respecto del vértice","No se puede determinar sin graficar"], correct:0, type:"avanzada",
+     why:"Al ser una V, los puntos equidistantes del vértice (x=3) dan la misma imagen: g(1)=g(5)=4, con 1≠5, así que no es inyectiva en ese dominio."},
+    {text:"Una empresa compra una maquinaria en $15.000 que se deprecia linealmente hasta $3.000 en 6 años, y luego mantiene ese valor residual constante: V(t) = 15000−2000t si 0≤t≤6 ; V(t)=3000 si t>6. ¿Tiene esta función algún cero (V(t)=0) para t≥0?",
+     options:["No: la rama lineal se anularía en t=7,5, que queda fuera de [0,6], y la rama constante nunca vale 0","Sí, en t=7,5","Sí, en t=6","Sí, en t=0","No se puede determinar sin más datos"], correct:0, type:"avanzada",
+     why:"15000−2000t=0 da t=7,5, pero esa rama solo es válida para 0≤t≤6; como 7,5 no pertenece a ese tramo, no es un cero válido, y la rama constante (3000) tampoco se anula nunca."},
+  ],
+  g3: [
+    {text:"Si f(x)=√(x−2) y g(x)=√(6−x), ¿cuál es el dominio de (f+g)?",
+     options:["[2, 6]","[2, 6)","(2, 6)","ℝ","[2, +∞)"], correct:0,
+     why:"Dom f=[2,+∞), Dom g=(−∞,6]. El dominio de la suma es la intersección: [2,6]."},
+    {text:"Si f(x)=√(x−2) y g(x)=√(6−x), ¿cuál es el dominio de (f/g)?",
+     options:["[2, 6)","[2, 6]","(2, 6)","[2, +∞)","ℝ − {6}"], correct:0,
+     why:"Se parte de dom f ∩ dom g = [2,6], y además se excluyen los ceros de g: g(6)=0, entonces queda [2,6)."},
+    {text:"Si f(x)=1/(x+3) y g(x)=1/(x−3), ¿cuál es el dominio de (f·g)?",
+     options:["ℝ − {−3, 3}","ℝ − {3}","ℝ − {−3}","ℝ","{−3, 3}"], correct:0,
+     why:"Dom f = ℝ−{−3}, Dom g = ℝ−{3}. El dominio del producto es la intersección de ambos: ℝ−{−3,3}."},
+    {text:"¿Cuál de las siguientes afirmaciones es verdadera?",
+     options:["dom(f+g) = dom f ∩ dom g","dom(f+g) = dom f ∪ dom g","dom(f/g) = dom f ∩ dom g","dom(f·g) siempre es ℝ","dom(f+g) ⊃ dom f"], correct:0,
+     why:"El dominio de f+g es siempre la intersección de los dominios; la de f/g necesita además excluir los ceros de g, así que esa opción está incompleta."},
+    {text:"Si f(x)=√x y g(x)=x−5, ¿cuál es el dominio de (f∘g)(x)?",
+     options:["[5, +∞)","(5, +∞)","ℝ","(−∞, 5]","[0, +∞)"], correct:0,
+     why:"Se necesita g(x)≥0 (para poder aplicar la raíz): x−5≥0 ⇒ x≥5."},
+    {text:"Si f(x)=√x y g(x)=x−5, ¿cuál es el dominio de (g∘f)(x)?",
+     options:["[0, +∞)","[5, +∞)","ℝ","(−∞, 0]","∅"], correct:0,
+     why:"f(x)=√x exige x≥0; los valores de f siempre pueden entrar en g=x−5 sin restricción extra, así que el dominio es [0,+∞)."},
+    {text:"Si f(x)=1/x y g(x)=1/x, ¿cuál es el dominio de (f∘g)(x)?",
+     options:["ℝ − {0}","ℝ","{0}","ℝ − {0, 1}","∅"], correct:0,
+     why:"Aunque la fórmula simplificada dé f(g(x))=x, la composición debe respetar que x≠0 (para que g esté definida); el dominio sigue siendo ℝ−{0}."},
+    {text:"Si f(x)=x²+1 y g(x)=2x−3, ¿cuánto vale (f∘g)(2)?",
+     options:["2","4","5","1","−1"], correct:0,
+     why:"g(2)=2·2−3=1, y f(1)=1²+1=2."},
+    {text:"¿Cómo se descompone h(x) = √(3x+7) como composición f∘g?",
+     options:["f(x)=√x, g(x)=3x+7","f(x)=3x+7, g(x)=√x","f(x)=√(3x), g(x)=7","f(x)=x², g(x)=3x+7","No se puede descomponer"], correct:0,
+     why:"h(x)=f(g(x)) con g(x)=3x+7 (lo de adentro) y f(x)=√x (lo de afuera); invertir el orden daría 3√x+7, que no es h(x)."},
+    {text:"Si f = {(1,4); (2,7); (3,10); (4,13)}, ¿cuánto vale f⁻¹(7)?",
+     options:["2","7","4","1","13"], correct:0,
+     why:"f⁻¹(7) es el valor x tal que f(x)=7; como f(2)=7, entonces f⁻¹(7)=2."},
+    {text:"¿Cuál es la inversa de f(x) = (x+5)/2?",
+     options:["f⁻¹(x) = 2x − 5","f⁻¹(x) = 2x + 5","f⁻¹(x) = (x−5)/2","f⁻¹(x) = x/2 − 5","f⁻¹(x) = −2x + 5"], correct:0,
+     why:"De y=(x+5)/2 se despeja: 2y=x+5 ⇒ x=2y−5, así que f⁻¹(x)=2x−5."},
+    {text:"Si f(x) = x³ + 2, ¿cuánto vale f⁻¹(10)?",
+     options:["2","8","10","4","−2"], correct:0,
+     why:"Se busca x tal que f(x)=10: x³+2=10 ⇒ x³=8 ⇒ x=2."},
+    {text:"¿Bajo qué condición una función f tiene inversa?",
+     options:["Cuando f es biunívoca (inyectiva) en su dominio","Cuando f es continua en su dominio","Cuando el dominio de f es ℝ","Cuando f es una recta","Siempre tiene inversa"], correct:0,
+     why:"Solo las funciones inyectivas (biunívocas) tienen función inversa, porque de lo contrario un mismo valor de y correspondería a más de un x."},
+    {text:"Si f tiene dominio [2,9] y rango [0,20], ¿cuál es el dominio de f⁻¹ (si existe)?",
+     options:["[0, 20]","[2, 9]","[0, 9]","[2, 20]","ℝ"], correct:0,
+     why:"El dominio de f⁻¹ es siempre el rango de f, y viceversa: dom f⁻¹ = rgo f = [0,20]."},
+    {text:"¿Qué relación geométrica existe entre las gráficas de f y f⁻¹?",
+     options:["Son simétricas respecto de la recta y=x","Son simétricas respecto del eje y","Son simétricas respecto del origen","Son paralelas","Son siempre la misma curva"], correct:0,
+     why:"Como f⁻¹ intercambia los papeles de x e y respecto de f, sus gráficas resultan reflejadas una de la otra respecto de la recta y=x."},
+    {text:"¿Por qué se puede calcular f⁻¹(k) para un valor puntual k sin hallar antes la fórmula general de f⁻¹?",
+     options:["Porque f⁻¹(k) es, por definición, el x tal que f(x)=k; alcanza con resolver esa ecuación puntual","Porque f⁻¹ nunca tiene una fórmula general","Porque toda función tiene inversa en cualquier punto que se elija","Porque f(k) y f⁻¹(k) son siempre el mismo número","Porque no hace falta que f sea inyectiva para que esto funcione"], correct:0, type:"teoria",
+     why:"f⁻¹(k)=x significa exactamente que f(x)=k; planteando y resolviendo esa ecuación para ese k puntual se obtiene el valor buscado, sin pasar por la fórmula general."},
+    {text:"¿Qué condición hace falta para que f+g, f−g o f·g estén definidas, más allá de los dominios de f y g?",
+     options:["Ninguna condición especial: siempre se definen en dom f ∩ dom g","Que f y g tengan el mismo rango","Que ambas funciones sean biunívocas","Que ambas funciones sean continuas","Que g no tenga ceros"], correct:0, type:"teoria",
+     why:"A diferencia del cociente, la suma, resta y producto de funciones no requieren ninguna condición extra: basta con que ambos valores f(x) y g(x) existan."},
+    {text:"¿Por qué el dominio de (f/g) exige, además, excluir los ceros de g?",
+     options:["Porque dividir por cero no está definido","Porque el cociente de funciones siempre reduce el dominio a la mitad","Porque g debe ser biunívoca para que exista f/g","Porque f y g deben tener distinto dominio","No hay ninguna razón particular, es solo una convención"], correct:0, type:"teoria",
+     why:"En los puntos donde g(x)=0, la expresión f(x)/g(x) implicaría una división por cero, que no tiene sentido matemático; por eso esos puntos se excluyen del dominio."},
+    {text:"¿Qué significa que una función h(x) se pueda escribir como composición f∘g?",
+     options:["Que h(x) = f(g(x)): primero se aplica g, y el resultado se usa como entrada de f","Que h(x) = f(x)·g(x)","Que h(x) = f(x) + g(x)","Que f y g son necesariamente inversas entre sí","Que h(x) = g(f(x)), sin importar el orden en que se escriba"], correct:0, type:"teoria",
+     why:"La notación f∘g significa aplicar primero g y luego f al resultado; por eso (f∘g)(x)=f(g(x))."},
+    {text:"¿Qué relación hay entre el dominio de f⁻¹ y el rango de f?",
+     options:["Son el mismo conjunto: dom(f⁻¹) = rgo(f)","El dominio de f⁻¹ siempre es ℝ","No tienen ninguna relación entre sí","El dominio de f⁻¹ es igual al dominio de f","El dominio de f⁻¹ es siempre más chico que el rango de f"], correct:0, type:"teoria",
+     why:"Como f⁻¹ invierte los papeles de x e y respecto de f, lo que era el rango de f pasa a ser exactamente el dominio de f⁻¹."},
+    {text:"¿Es cierto que (f∘g)(x) = (g∘f)(x) para cualquier par de funciones f y g?",
+     options:["No, en general (f∘g)≠(g∘f); por ejemplo con f(x)=x+1 y g(x)=x², (f∘g)(1)=2 pero (g∘f)(1)=4","Sí, siempre, porque la composición es conmutativa","Sí, pero solo si f y g son polinomios","No, nunca pueden ser iguales en ningún caso","Sí, siempre que f y g tengan el mismo dominio"], correct:0, type:"teoria",
+     why:"La composición de funciones no es conmutativa en general: el orden en que se aplican f y g cambia el resultado, como muestra el contraejemplo."},
+    {text:"Sea f(x) = √(2x−4) + 3. Sin hallar la fórmula de f⁻¹, ¿cuánto vale f⁻¹(1)?",
+     options:["No existe, porque 1 no pertenece al rango de f (que es [3,+∞))","1/2","−3/2","5/2","No se puede saber sin la fórmula general"], correct:0, type:"avanzada",
+     why:"f⁻¹(1) existiría si hubiera un x con f(x)=1, es decir √(2x−4)=−2, imposible porque una raíz cuadrada nunca es negativa. Como el rango de f es [3,+∞) y 1 no pertenece a él, f⁻¹(1) no existe."},
+    {text:"Si f(x) = √x − 1, ¿cuál es el dominio de (f∘f)(x)?",
+     options:["[1, +∞)","[0, +∞)","(1, +∞)","ℝ","[−1, +∞)"], correct:0, type:"avanzada",
+     why:"Se necesita f(x)∈Dom f=[0,+∞), es decir √x−1≥0 ⇒ √x≥1 ⇒ x≥1. El dominio de f∘f es más chico que el de f."},
+    {text:"Sean f(x) = [ln(x+1) + 3x] / eˣ y g(x) = x + ∛x. ¿Cuál es el dominio de (f−g)(x)?",
+     options:["(−1, +∞)","ℝ","(−1, +∞) − {0}","[−1, +∞)","ℝ − {0}"], correct:0, type:"avanzada",
+     why:"eˣ nunca se anula (no restringe nada) y ∛x está definida en todo ℝ. La única restricción viene de ln(x+1), que exige x+1>0, es decir x>−1."},
+    {text:"Sean f(x) = 1/(x−2), con dominio x<2, y g(x) = √(x+1). ¿Cuál es el dominio de (g∘f)(x)?",
+     options:["(−∞, 1]","(−∞, 2)","(−∞, −1]","[1, 2)","∅"], correct:0, type:"avanzada",
+     why:"Se necesita f(x)+1≥0, es decir 1/(x−2)≥−1. Como x<2 implica (x−2)<0, al multiplicar por (x−2) hay que invertir la desigualdad: 1≤−(x−2) ⇒ x≤1. Combinado con x<2, queda (−∞,1]."},
+    {text:"Sea h(x) = −x²+1, definida para x > 1 (para que sea biunívoca). ¿Cuál es la fórmula de h⁻¹(x) y cuál es su dominio?",
+     options:["h⁻¹(x) = √(1−x), con dominio (−∞, 0)","h⁻¹(x) = √(1−x), con dominio (−∞, 0]","h⁻¹(x) = −√(1−x), con dominio (−∞, 0)","h⁻¹(x) = √(x−1), con dominio (1,+∞)","h⁻¹(x) = 1−x², con dominio ℝ"], correct:0, type:"avanzada",
+     why:"Despejando de y=−x²+1 con x>1 (raíz positiva): x=√(1−y). El dominio de h⁻¹ es el rango de h, que es (−∞,0) porque en x>1 h es decreciente y h(1)=0 queda excluido."},
+    {text:"Sean f(x) = x²−4 y g(x) = |x+2|. Aunque al simplificar (f/g)(x) el factor (x+2) parece cancelarse, ¿cuál es el dominio real de (f/g)(x)?",
+     options:["ℝ − {−2} (el punto x=−2 sigue excluido, aunque la expresión simplificada no lo muestre)","ℝ","ℝ − {2, −2}","(−2, +∞)","ℝ − {2}"], correct:0, type:"avanzada",
+     why:"El dominio de un cociente se determina ANTES de simplificar: g(x)=0 en x=−2, así que ese punto queda excluido, sin importar que la expresión simplificada ya no lo muestre."},
+  ],
+  g4: [
+    {text:"Calculá: lim x→2 (x² − 4)/(x − 2).",
+     options:["4","0","2","No existe","∞"], correct:0,
+     why:"Factorizando: (x−2)(x+2)/(x−2) = x+2 (para x≠2), y el límite cuando x→2 es 2+2=4."},
+    {text:"Calculá: lim x→5 (x² − 25)/(x − 5).",
+     options:["10","5","0","25","∞"], correct:0,
+     why:"Factorizando: (x−5)(x+5)/(x−5) = x+5, y el límite cuando x→5 es 5+5=10."},
+    {text:"Calculá: lim x→0 (√(x+4) − 2)/x.",
+     options:["1/4","1/2","0","4","2"], correct:0,
+     why:"Racionalizando (multiplicando por el conjugado), la expresión se simplifica a 1/(√(x+4)+2), que en x=0 vale 1/(2+2)=1/4."},
+    {text:"Calculá: lim x→3 |x−3|/(x−3).",
+     options:["No existe (los límites laterales son distintos)","0","1","−1","∞"], correct:0,
+     why:"Por izquierda el cociente vale −1 y por derecha vale 1; al no coincidir los límites laterales, el límite no existe."},
+    {text:"Si f(x) = { x²+1 si x<1 ; 3x−1 si x≥1 }, ¿cuánto vale lim x→1 f(x)?",
+     options:["2","3","1","No existe","0"], correct:0,
+     why:"Por izquierda: 1²+1=2. Por derecha: 3·1−1=2. Ambos límites laterales coinciden en 2."},
+    {text:"Calculá: lim x→∞ (3x² − 5x + 1)/(2x² + 7).",
+     options:["3/2","0","∞","5/7","1"], correct:0,
+     why:"Cuando el numerador y el denominador tienen el mismo grado, el límite es el cociente de los coeficientes principales: 3/2."},
+    {text:"Calculá: lim x→∞ (5x + 2)/(x² − 3).",
+     options:["0","5","∞","5/1","−3"], correct:0,
+     why:"El denominador tiene mayor grado que el numerador, así que el cociente tiende a 0."},
+    {text:"Calculá: lim x→∞ (4x³ + 1)/(2x² + 9).",
+     options:["+∞","−∞","0","2","4"], correct:0,
+     why:"El numerador tiene mayor grado; como el cociente de coeficientes principales (4/2=2) es positivo, el límite es +∞."},
+    {text:"Si lim x→a f(x) = 5 y lim x→a g(x) = −2, ¿cuánto vale lim x→a [f(x)·g(x)]?",
+     options:["−10","3","−7","10","−2/5"], correct:0,
+     why:"El límite de un producto es el producto de los límites: 5·(−2) = −10."},
+    {text:"Si lim x→a f(x) = 5 y lim x→a g(x) = −2, ¿cuánto vale lim x→a [f(x)/g(x)]?",
+     options:["−5/2","−2/5","5/2","−10","3"], correct:0,
+     why:"El límite de un cociente es el cociente de los límites (si el del denominador no es 0): 5/(−2) = −5/2."},
+    {text:"Calculá: lim x→∞ (1 + 3/x)^x.",
+     options:["e³","e^(1/3)","3e","e","∞"], correct:0,
+     why:"Es el límite notable (1+a/x)^x → eᵃ, con a=3."},
+    {text:"Calculá: lim x→∞ (1 + 1/(2x))^(4x).",
+     options:["e²","e⁴","e^(1/2)","e⁸","2e"], correct:0,
+     why:"(1+a/x)^(bx) → e^(ab); acá a=1/2 y b=4, entonces el exponente de e es (1/2)·4=2."},
+    {text:"Si lim x→3⁺ f(x) = +∞ y lim x→3⁻ f(x) = −∞, ¿qué se puede afirmar?",
+     options:["f tiene una asíntota vertical en x=3","f es continua en x=3","f tiene un máximo en x=3","f tiene una asíntota horizontal en x=3","El límite en x=3 existe y vale ∞"], correct:0,
+     why:"Cuando alguno de los límites laterales es infinito (con cualquier signo), la recta x=3 es asíntota vertical de f."},
+    {text:"Si lim x→+∞ f(x) = 4 y lim x→−∞ f(x) = 4, ¿qué asíntota(s) horizontal(es) tiene f?",
+     options:["y=4, válida en ambas direcciones","y=4 solo a la derecha","x=4","No tiene asíntota horizontal","y=0"], correct:0,
+     why:"Como ambos límites al infinito dan el mismo valor, hay una única asíntota horizontal y=4, válida tanto a la izquierda como a la derecha."},
+    {text:"Para f(x) = x/(x+2)³, ¿qué ocurre cuando x→−2⁺?",
+     options:["f(x) → −∞","f(x) → +∞","f(x) → 0","f(x) → −2","El límite no existe (oscila)"], correct:0,
+     why:"Cerca de x=−2⁺, (x+2) es positivo y muy chico, entonces (x+2)³ también es positivo y muy chico; como el numerador x≈−2 es negativo, el cociente tiende a −∞."},
+    {text:"¿Qué significa, de manera intuitiva, que lim x→a f(x) = L?",
+     options:["Que f(x) se acerca cada vez más a L a medida que x se acerca a a, sin que sea necesario que f(a) valga L","Que f(a) es exactamente igual a L","Que f(x) vale L solo cuando x se acerca a a por la derecha","Que f es continua en a","Que f(x) nunca puede alejarse de L una vez que x pasa por a"], correct:0, type:"teoria",
+     why:"El límite describe el comportamiento de f cerca de a, independientemente de si f está definida en a o de qué valor tome ahí."},
+    {text:"Si existe lim x→a [f(x) + g(x)], ¿se puede afirmar que existen por separado lim x→a f(x) y lim x→a g(x)?",
+     options:["No, no es necesariamente cierto (las divergencias de f y g pueden cancelarse)","Sí, siempre","Sí, pero solo si f y g son polinomios","No, nunca puede pasar que exista la suma","Depende únicamente del signo de a"], correct:0, type:"teoria",
+     why:"Es un contraejemplo clásico: f y g pueden no tener límite individualmente y sin embargo su suma sí tenerlo, si sus comportamientos divergentes se compensan."},
+    {text:"¿Es necesario que f esté definida en x=a para que exista lim x→a f(x)?",
+     options:["No, el límite puede existir perfectamente aunque f no esté definida en a","Sí, siempre es necesario","Sí, pero solo si f es una función racional","No, el límite nunca puede existir si f no está definida en a","Depende de si a es positivo o negativo"], correct:0, type:"teoria",
+     why:"El límite solo depende de los valores de f cerca de a, no en a; por eso puede existir incluso cuando f(a) no está definida (como en las discontinuidades evitables)."},
+    {text:"Si lim x→a f(x) existe, ¿puede tener más de un valor a la vez?",
+     options:["No, el límite de una función en un punto, si existe, es único","Sí, puede tener varios valores distintos","Sí, uno para cada lado","Depende de si f es continua en a","Sí, si f no está acotada cerca de a"], correct:0, type:"teoria",
+     why:"La unicidad del límite es una propiedad básica: si el límite existe, es un único número real."},
+    {text:"¿Cuándo se dice que la recta x=a es una asíntota vertical de la gráfica de f?",
+     options:["Cuando al menos uno de los límites laterales de f en a es infinito","Cuando f(a) no está definida","Cuando f es discontinua en a, sin importar el tipo de discontinuidad","Cuando lim x→a f(x) = 0","Cuando f tiene un máximo en x=a"], correct:0, type:"teoria",
+     why:"La asíntota vertical se define específicamente por un comportamiento infinito de algún límite lateral, no por cualquier discontinuidad o por que f(a) no exista."},
+    {text:"¿Cuál es la diferencia entre 'lim x→∞ f(x) = 5' y 'lim x→3 f(x) = ∞'?",
+     options:["La primera describe que f se estabiliza en un valor finito cuando x crece sin límite; la segunda describe que f crece sin límite cuando x se acerca a 3","La primera describe un límite lateral y la segunda uno bilateral","Son exactamente lo mismo, solo cambia la notación","La segunda indica que f(3)=∞","La primera indica que f no está definida en ningún punto"], correct:0, type:"teoria",
+     why:"Son dos ideas distintas: 'límite en el infinito' habla del comportamiento de f para x muy grande, mientras que 'límite infinito' habla de que f crece o decrece sin cota cerca de un punto finito."},
+    {text:"Calculá: lim x→∞ (1 + 3/(5x))^(−x/2).",
+     options:["e^(−3/10)","e^(3/10)","e^(−3/5)","e^(5/6)","1"], correct:0, type:"avanzada",
+     why:"Con (1+a/x)^(bx) → e^(ab), acá a=3/5 y el exponente es (−1/2)x, entonces b=−1/2: e^((3/5)(−1/2))=e^(−3/10)."},
+    {text:"Calculá: lim x→∞ (1 + 4/(3x))^(3x+2).",
+     options:["e⁴","e^(4/3)","e^(11/3)","e⁶","e²"], correct:0, type:"avanzada",
+     why:"Separando el exponente: (1+4/(3x))^(3x) · (1+4/(3x))². El primer factor tiende a e^((4/3)·3)=e⁴; el segundo tiende a 1²=1. El resultado es e⁴."},
+    {text:"Calculá: lim x→∞ (4x³ + 5x + 3) / (−3(x+2)²).",
+     options:["−∞","+∞","−4/3","0","4/3"], correct:0, type:"avanzada",
+     why:"El numerador es de grado 3 y el denominador, aunque escrito como (x+2)², es de grado 2. Como el grado del numerador es mayor y el cociente de coeficientes principales (4 y −3) es negativo, el límite es −∞."},
+    {text:"Calculá: lim x→4 (x³ − 64) / (4x − x²).",
+     options:["−12","12","−3","16","No existe"], correct:0, type:"avanzada",
+     why:"x³−64=(x−4)(x²+4x+16); 4x−x²=−x(x−4). Simplificando: (x²+4x+16)/(−x), que en x=4 vale 48/(−4)=−12."},
+    {text:"Calculá: lim x→1⁺ [2/(x²−1) − 1/(x−1)].",
+     options:["−1/2","1/2","−2","0","No existe (los límites laterales son distintos)"], correct:0, type:"avanzada",
+     why:"Con denominador común (x−1)(x+1): [2−(x+1)]/[(x−1)(x+1)] = −1/(x+1), que en x→1 vale −1/2."},
+    {text:"Sea f(x) = √(4−x²), con dominio [−2, 2]. ¿Cuánto vale lim x→−2⁺ f(x)?",
+     options:["0","No existe, porque x=−2 es el extremo del dominio","2","4","No se puede calcular un límite lateral derecho en el extremo izquierdo del dominio"], correct:0, type:"avanzada",
+     why:"Aunque x=−2 es el extremo del dominio, el límite lateral derecho sí tiene sentido porque f está definida a la derecha de −2: lim x→−2⁺ √(4−x²) = √(4−4) = 0."},
+  ],
+  g5: [
+    {text:"Sea f(x) = (x²−4)/(x−2) con f(2)=4. ¿Es continua en x=2?",
+     options:["Sí, porque el límite en x=2 coincide con f(2)","No, porque f no está definida en x=2","No, porque el límite no existe","Sí, porque f es un polinomio","No se puede determinar"], correct:0,
+     why:"El límite cuando x→2 de (x²−4)/(x−2) es 4, que coincide exactamente con f(2)=4: se cumple la definición de continuidad."},
+    {text:"Sea f(x) = (x²−4)/(x−2) con f(2)=10. ¿Es continua en x=2?",
+     options:["No, hay una discontinuidad evitable","Sí, es continua","No, hay una discontinuidad de salto","No, hay una discontinuidad infinita","Sí, porque el límite existe"], correct:0,
+     why:"El límite sigue siendo 4, pero ahora f(2)=10≠4: el límite existe pero no coincide con el valor de la función, es decir, discontinuidad evitable."},
+    {text:"¿Para qué valor de k es continua f(x) = { 5x−k si x≤2 ; x²+3 si x>2 } en x=2?",
+     options:["k = 3","k = 7","k = 10","k = −3","k = 13"], correct:0,
+     why:"Valor izquierdo: 5·2−k=10−k. Límite derecho: 2²+3=7. Igualando: 10−k=7 ⇒ k=3."},
+    {text:"Si f y g son continuas en x=a, ¿cuál de las siguientes es siempre continua en x=a?",
+     options:["f·g","f/g","f∘h para cualquier h","1/f siempre","Ninguna de las anteriores"], correct:0,
+     why:"El producto de funciones continuas siempre es continuo. El cociente f/g necesita además que g(a)≠0, así que no es 'siempre' continua."},
+    {text:"Si f·g es continua en x=a, ¿se puede afirmar que f y g son continuas en x=a por separado?",
+     options:["No, no es necesariamente cierto","Sí, siempre","Sí, pero solo si a=0","No, nunca puede ocurrir","Depende del signo de a"], correct:0,
+     why:"Es un contraejemplo clásico: el producto de dos funciones discontinuas puede resultar continuo (por ejemplo si las discontinuidades se cancelan)."},
+    {text:"¿Qué tipo de discontinuidad tiene f(x) = 1/(x−4) en x=4?",
+     options:["Infinita (asíntota vertical)","Evitable","De salto","No tiene discontinuidad","Evitable con f(4)=0"], correct:0,
+     why:"Cuando x→4, f(x)→±∞: es una discontinuidad infinita, asociada a una asíntota vertical en x=4."},
+    {text:"¿Qué tipo de discontinuidad tiene f(x) = { x+2 si x<0 ; x−2 si x≥0 } en x=0?",
+     options:["De salto (los límites laterales existen pero son distintos)","Evitable","Infinita","Es continua","No existe el límite lateral izquierdo"], correct:0,
+     why:"Límite izquierdo: 0+2=2. Valor/límite derecho: 0−2=−2. Ambos existen pero son distintos: es un salto."},
+    {text:"f(x) = (x²−9)/(x−3) tiene una discontinuidad evitable en x=3. ¿Qué valor habría que asignarle a f(3) para hacerla continua?",
+     options:["6","0","3","9","No se puede"], correct:0,
+     why:"El límite cuando x→3 de (x²−9)/(x−3) = x+3 es 3+3=6; redefiniendo f(3)=6 se elimina la discontinuidad."},
+    {text:"¿Cuál de las siguientes afirmaciones es verdadera?",
+     options:["Si f es continua en (a,b), entonces lim x→c f(x)=f(c) para todo c∈(a,b)","Si a∈dom f, entonces f es continua en a","Si el límite de f en a existe y f(a) existe, entonces f es continua en a","La continuidad no requiere que el límite exista","Toda función definida en un intervalo es continua en él"], correct:0,
+     why:"Es la definición misma de continuidad en un intervalo abierto; pertenecer al dominio o que ambos existan por separado no alcanza, deben además coincidir."},
+    {text:"¿Es continua f(x) = 5x/(3x−2) en el intervalo (0,1)?",
+     options:["No, porque x=2/3 pertenece a (0,1) y ahí f no está definida","Sí, porque es una función racional","Sí, porque el numerador es continuo","No, porque el intervalo es abierto","No se puede determinar sin graficar"], correct:0,
+     why:"El denominador se anula en x=2/3, que está dentro de (0,1); ahí la función no está definida y por lo tanto no es continua en todo el intervalo."},
+    {text:"Si f es continua en g(a) y g es continua en a, ¿qué se puede afirmar sobre f∘g en x=a?",
+     options:["f∘g es continua en x=a","f∘g nunca es continua","Solo es continua si f=g","Se necesita además que f sea derivable","No se puede afirmar nada"], correct:0,
+     why:"La composición de funciones continuas (en los puntos correspondientes) es continua: es un teorema directo."},
+    {text:"¿En qué valor de x tiene f(x) = 1/(2ˣ − 4) una discontinuidad infinita?",
+     options:["x = 2","x = 4","x = 0","x = 1","x = −2"], correct:0,
+     why:"El denominador se anula cuando 2ˣ=4, es decir x=2; ahí f tiene una asíntota vertical."},
+    {text:"Si f(x) = 1/(2ˣ − 4), ¿es continua en x=0?",
+     options:["Sí, x=0 no es un punto problemático","No, hay un salto en x=0","No, hay una asíntota en x=0","No se puede evaluar f(0)","Sí, pero solo por la derecha"], correct:0,
+     why:"f(0) = 1/(2⁰−4) = 1/(1−4) = −1/3, un valor perfectamente definido; el único punto conflictivo de esta función es x=2."},
+    {text:"¿Para qué valor de m es continua f(x) = { mx+1 si x<4 ; 2x−3 si x≥4 } en x=4?",
+     options:["m = 1","m = 4","m = 5","m = −1","m = 1/4"], correct:0,
+     why:"Valor izquierdo: 4m+1. Valor derecho: 2·4−3=5. Igualando: 4m+1=5 ⇒ m=1."},
+    {text:"¿Es cierto que 'toda función continua en un punto es derivable en ese punto'?",
+     options:["No, la continuidad no implica derivabilidad (ej.: |x| en x=0)","Sí, siempre","Sí, pero solo para polinomios","No, porque ninguna función continua es derivable","Depende del dominio"], correct:0,
+     why:"|x| es continua en x=0 pero no derivable ahí, porque las derivadas laterales (−1 y 1) no coinciden: la continuidad es necesaria pero no suficiente para la derivabilidad."},
+    {text:"Según el teorema de Bolzano, si f es continua en [a,b] y f(a)·f(b)<0, ¿qué se puede afirmar?",
+     options:["Existe al menos un c∈(a,b) tal que f(c)=0","f tiene un máximo en (a,b)","f es derivable en (a,b)","f(a) tiene que ser igual a f(b)","No se puede afirmar nada sin más datos"], correct:0, type:"teoria",
+     why:"Si f es continua en [a,b] y cambia de signo entre los extremos, el teorema de Bolzano garantiza al menos una raíz en el intervalo abierto (a,b)."},
+    {text:"Según el teorema de Weierstrass, si f es continua en un intervalo cerrado [a,b], ¿qué garantiza?",
+     options:["Que f alcanza un máximo absoluto y un mínimo absoluto en [a,b]","Que f es derivable en [a,b]","Que f es una función lineal en [a,b]","Que f(a)=f(b)","Que f no tiene discontinuidades evitables"], correct:0, type:"teoria",
+     why:"El teorema de Weierstrass asegura la existencia de valores extremos absolutos para toda función continua en un intervalo cerrado y acotado."},
+    {text:"¿Cuál es la diferencia entre una discontinuidad evitable y una esencial (no evitable)?",
+     options:["En la evitable el límite existe (aunque no coincida con f(a) o esta no exista); en la esencial el límite no existe o es infinito","En la evitable el límite no existe; en la esencial siempre existe","No hay diferencia real entre ambas","La evitable solo puede ocurrir en x=0","La esencial solo se da en funciones polinómicas"], correct:0, type:"teoria",
+     why:"La clave de la clasificación es si el límite existe o no: si existe pero no coincide con f(a) (o f(a) no está definida) es evitable; si el límite no existe o es infinito, es esencial."},
+    {text:"¿Qué significa que una función sea 'continua en un intervalo'?",
+     options:["Que es continua en cada uno de los puntos de ese intervalo","Que su gráfica es una recta dentro de ese intervalo","Que no tiene raíces en ese intervalo","Que está acotada en ese intervalo","Que es derivable en los extremos del intervalo"], correct:0, type:"teoria",
+     why:"La continuidad en un intervalo se define punto a punto: f debe cumplir la condición de continuidad en cada x de ese intervalo."},
+    {text:"En un contexto económico, ¿por qué suele ser relevante que una función de costo sea continua?",
+     options:["Porque pequeños cambios en la cantidad producida no generan saltos abruptos en el costo total","Porque garantiza que el costo sea siempre igual a cero","Porque asegura que el costo sea negativo en algún punto","Porque vuelve innecesario calcular la derivada del costo","No tiene ninguna relevancia práctica"], correct:0, type:"teoria",
+     why:"La continuidad refleja que variaciones pequeñas en la producción se traducen en variaciones pequeñas (no saltos) en el costo, lo cual es razonable en la mayoría de los modelos económicos."},
+    {text:"Para que f sea continua en x=a, ¿alcanza con que exista lim x→a f(x)?",
+     options:["No, además debe existir f(a) y coincidir con ese límite","Sí, con que exista el límite ya alcanza","No, alcanza con que exista f(a), sin importar el límite","Sí, pero solo si f es un polinomio","No, nunca puede cumplirse esa condición"], correct:0, type:"teoria",
+     why:"La continuidad exige tres condiciones simultáneas: que exista f(a), que exista el límite, y que ambos coincidan; con solo el límite no alcanza."},
+    {text:"¿Qué tipo de discontinuidad tiene f(x) = |x+2| / (x²−4) en x=−2?",
+     options:["De salto (los límites laterales existen pero son distintos: −1/4 y 1/4)","Evitable (se puede redefinir f(−2) para que sea continua)","Infinita (asíntota vertical)","No tiene discontinuidad en x=−2","Evitable, con f(−2)=0"], correct:0, type:"avanzada",
+     why:"Para x>−2, f(x)=1/(x−2)→−1/4; para x<−2, f(x)=−1/(x−2)→1/4. Ambos límites laterales existen pero no coinciden: es un salto, no evitable."},
+    {text:"Sea f(x) = { (1/2)ˣ+1 si x<−1 ; −|x−1|+5 si −1<x≤3 ; log₂(x−3) si x>3 }. En x=3, f(3)=3 (está definida). ¿Es f continua en x=3?",
+     options:["No: aunque f(3) existe, lim x→3⁺ log₂(x−3) = −∞, así que el límite no existe (discontinuidad esencial)","Sí, porque f(3) está definida y eso alcanza","No, es una discontinuidad evitable: bastaría redefinir f(3)","Sí, porque ambas ramas cercanas a x=3 son continuas por separado","No se puede determinar sin el valor de f en x=3,5"], correct:0, type:"avanzada",
+     why:"Que f(3) exista no alcanza: hace falta además que exista el límite. Como log₂(x−3)→−∞ cuando x→3⁺, el límite no existe, así que la discontinuidad es esencial, no evitable."},
+    {text:"Sea f(x) = (x³−1) / [(x−1)(eˣ−1)]. ¿Qué tipo de discontinuidad tiene f en x=0?",
+     options:["Esencial: los límites laterales son infinitos y de signo opuesto (+∞ y −∞)","Evitable, con límite finito 3/(e−1)","De salto, con límites laterales finitos distintos","No es discontinuidad: f está definida en x=0","Infinita, pero con ambos límites laterales +∞"], correct:0, type:"avanzada",
+     why:"Cerca de x=0, eˣ−1≈x, así que f(x)≈(x²+x+1)/x, que tiende a +∞ por la derecha y a −∞ por la izquierda: discontinuidad esencial (infinita, laterales de signo opuesto). Nota: en x=1 esta misma función SÍ tiene una discontinuidad evitable, con límite 3/(e−1)."},
+    {text:"Sea f(x) = { −x²+4x−1 si x<2 ; x−1 si x≥2 }. ¿Qué tipo de discontinuidad tiene f en x=2?",
+     options:["De salto: el límite por izquierda es 3 y por derecha es 1","Evitable: ambos límites laterales coinciden en 2","Infinita","No tiene discontinuidad: es continua en x=2","De salto: el límite por izquierda es 1 y por derecha es 3"], correct:0, type:"avanzada",
+     why:"lim x→2⁻ (−x²+4x−1) = −4+8−1=3. f(2)=2−1=1, que también es el límite por derecha. Como 3≠1, es un salto."},
+    {text:"Sea f(x) = (x−3) / (x²−5x+6). ¿Qué tipo de discontinuidad tiene f en x=3, y cuál en x=2?",
+     options:["En x=3 es evitable (el límite vale 1); en x=2 es no evitable (infinita)","En x=3 es infinita; en x=2 es evitable","Ambas son evitables","Ambas son infinitas","f es continua en ambos puntos"], correct:0, type:"avanzada",
+     why:"x²−5x+6=(x−2)(x−3), así que f(x)=1/(x−2) para x≠3. En x=3 el límite vale 1/(3−2)=1 (evitable). En x=2 el numerador no se anula pero el denominador sí: discontinuidad infinita."},
+    {text:"Sea f(x) = { ax+b si x<−2 ; 2 si x=−2 ; x²/a + bx si x>−2 }. El sistema de continuidad en x=−2 tiene dos soluciones (a,b); una de ellas tiene a=1/2. ¿Cuánto vale b en esa solución?",
+     options:["b=3","b=−3","b=2","b=−2","b=1"], correct:0, type:"avanzada",
+     why:"Igualando límite izquierdo y f(−2): −2a+b=2. Igualando límite derecho y f(−2): 4/a−2b=2. Sustituyendo b=2+2a en la segunda ecuación se llega a 2a²+3a−2=0, con soluciones a=1/2 (con b=3) y a=−2 (con b=−2)."},
+  ],
+  g6: [
+    {text:"¿Cuál es la definición de f'(a) mediante límite?",
+     options:["lim h→0 [f(a+h) − f(a)] / h","lim h→0 [f(a) − f(a+h)] / h","lim x→a [f(x) + f(a)] / (x−a)","lim h→0 [f(a+h) + f(a)] / h","f(a+1) − f(a)"], correct:0,
+     why:"Es la definición estándar de derivada como límite del cociente incremental."},
+    {text:"El límite lim h→0 [(3+h)² − 9] / h corresponde a la derivada de qué función, en qué punto?",
+     options:["f(x) = x² en a=3","f(x) = x² en a=9","f(x) = x³ en a=3","f(x) = 2x en a=3","f(x) = x²−9 en a=0"], correct:0,
+     why:"Tiene la forma [f(a+h)−f(a)]/h con f(x)=x² y a=3, ya que f(3)=9 y f(3+h)=(3+h)²."},
+    {text:"Calculá el límite lim h→0 [(3+h)² − 9] / h.",
+     options:["6","9","3","0","∞"], correct:0,
+     why:"Desarrollando: [(9+6h+h²)−9]/h = (6h+h²)/h = 6+h, que tiende a 6 cuando h→0 (coincide con f'(3)=2·3=6)."},
+    {text:"Si f(x) = 4x³ − 5x² + 2x − 7, ¿cuál es f'(x)?",
+     options:["12x² − 10x + 2","12x² − 10x − 7","4x² − 5x + 2","12x² − 5x + 2","3x² − 2x + 2"], correct:0,
+     why:"Derivando término a término: (4x³)'=12x², (−5x²)'=−10x, (2x)'=2, y la constante −7 desaparece."},
+    {text:"Si f(x) = (x²+1)(3x−2), ¿cuánto vale f'(1)?",
+     options:["8","6","9","5","12"], correct:0,
+     why:"Por regla del producto: f'(x)=2x(3x−2)+(x²+1)(3). En x=1: 2·1·1 + 2·3 = 2+6 = 8."},
+    {text:"Si f(x) = (2x+1)/(x−3), ¿cuál es f'(x)?",
+     options:["−7/(x−3)²","7/(x−3)²","−7/(x−3)","2/(x−3)²","−1/(x−3)²"], correct:0,
+     why:"Por regla del cociente: [2(x−3) − (2x+1)(1)] / (x−3)² = (2x−6−2x−1)/(x−3)² = −7/(x−3)²."},
+    {text:"Si f(x) = √x tiene dominio [0,+∞), ¿cuál es el dominio de f'?",
+     options:["(0, +∞), un subconjunto propio del dominio de f","[0, +∞), igual al dominio de f","ℝ","(−∞, 0)","{0}"], correct:0,
+     why:"f'(x) = 1/(2√x); en x=0 la tangente es vertical y la derivada no existe ahí, así que Dom f' = (0,+∞) ⊊ Dom f."},
+    {text:"f(x) = { x² si x<2 ; 4x−4 si x≥2 }. ¿Es derivable en x=2?",
+     options:["Sí, las derivadas laterales coinciden (ambas valen 4)","No, las derivadas laterales son distintas","No, porque no es continua en x=2","No se puede saber sin graficar","Sí, pero solo por la izquierda"], correct:0,
+     why:"Es continua (ambas ramas dan 4 en x=2). Derivada izquierda: 2x→4; derivada derecha: 4. Al coincidir, f es derivable en x=2."},
+    {text:"Si f(x) = (5x−3)⁴, ¿cuál es f'(x)?",
+     options:["20(5x−3)³","4(5x−3)³","20(5x−3)⁴","4(5x−3)⁴","5(5x−3)³"], correct:0,
+     why:"Por regla de la cadena: 4(5x−3)³ multiplicado por la derivada interna (5): 4·5·(5x−3)³ = 20(5x−3)³."},
+    {text:"Si f(x) = √(x²+9), ¿cuánto vale f'(4)?",
+     options:["4/5","5/4","8/5","4/25","1/5"], correct:0,
+     why:"f'(x) = x/√(x²+9). En x=4: 4/√25 = 4/5."},
+    {text:"El límite lim h→0 [1/(5+h) − 1/5] / h corresponde a la derivada de qué función, en qué punto?",
+     options:["f(x) = 1/x en a=5","f(x) = 1/x en a=1/5","f(x) = x en a=5","f(x) = 5/x en a=1","f(x) = 1/x² en a=5"], correct:0,
+     why:"Tiene la forma [f(a+h)−f(a)]/h con f(x)=1/x y a=5."},
+    {text:"¿Cuál de las siguientes afirmaciones es verdadera?",
+     options:["Si f es derivable en a, entonces f es continua en a","Si f es continua en a, entonces f es derivable en a","Dom f ⊂ Dom f' siempre","Si no existe f'(a), f no es continua en a","f continua en [a,b] ⇒ existen f'(a) y f'(b)"], correct:0,
+     why:"La derivabilidad implica continuidad, pero la recíproca es falsa (por ejemplo |x| en x=0 es continua pero no derivable)."},
+    {text:"f(x) = |x−3|. ¿Es derivable en x=3?",
+     options:["No, aunque es continua en x=3, las derivadas laterales no coinciden","Sí, porque es continua","Sí, vale 0","No, porque no es continua en x=3","No se puede determinar"], correct:0,
+     why:"La derivada lateral izquierda vale −1 y la derecha vale +1; al no coincidir, f no es derivable en x=3, aunque sí es continua ahí."},
+    {text:"¿Cuál es la relación correcta entre el dominio de f y el de f'?",
+     options:["Dom f' ⊆ Dom f (la derivada nunca amplía el dominio)","Dom f ⊆ Dom f' siempre","Dom f = Dom f' siempre","No existe relación entre ambos","Dom f' siempre es ℝ"], correct:0,
+     why:"El dominio de la derivada es siempre un subconjunto (igual o más chico) del dominio de la función original, nunca más grande."},
+    {text:"Si f'₋(a) = f'₊(a) = 3, ¿qué se puede afirmar?",
+     options:["f es derivable en a y f'(a)=3","f no es derivable en a","f es continua pero no derivable en a","f tiene un mínimo en a","No se puede afirmar nada"], correct:0,
+     why:"Cuando las derivadas laterales existen y coinciden, la función es derivable en ese punto y f'(a) es justamente ese valor común."},
+    {text:"¿Qué representa geométricamente f'(a)?",
+     options:["La pendiente de la recta tangente a la gráfica de f en el punto (a, f(a))","El área bajo la curva de f hasta x=a","El valor máximo que alcanza f","La pendiente de una recta secante cualquiera","La distancia entre f(a) y el eje x"], correct:0, type:"teoria",
+     why:"Por definición, la derivada en un punto es el límite de las pendientes de las rectas secantes, que converge a la pendiente de la recta tangente en ese punto."},
+    {text:"En términos de razón de cambio, ¿qué mide f'(a)?",
+     options:["La razón de cambio instantánea de f respecto de x, en x=a","La razón de cambio promedio de f en todo su dominio","El cambio total acumulado de f entre dos puntos","La razón de cambio de f respecto del tiempo, exclusivamente","El valor de f en el punto a"], correct:0, type:"teoria",
+     why:"A diferencia de la tasa de variación media (que usa un intervalo), la derivada captura la tasa de cambio en un instante puntual."},
+    {text:"¿En qué tipo de puntos de una gráfica NO existe, típicamente, la derivada?",
+     options:["En picos o 'esquinas', en discontinuidades, y donde la recta tangente es vertical","Únicamente en los máximos absolutos de la función","En ningún punto: la derivada siempre existe si f está definida","Únicamente donde f(x)=0","Únicamente en los extremos del dominio de f"], correct:0, type:"teoria",
+     why:"La derivada falla en esquinas o picos (las derivadas laterales no coinciden), en puntos donde f no es continua, y donde la tangente es vertical (pendiente infinita)."},
+    {text:"¿Qué regla de derivación hay que usar como base para derivar f(x) = sen(x)·ln(x)?",
+     options:["La regla del producto","La regla del cociente","Únicamente la regla de la cadena","La derivada de una suma","No se puede derivar esa función"], correct:0, type:"teoria",
+     why:"Al ser f un producto de dos funciones (sen(x) y ln(x)), corresponde aplicar la regla del producto como estructura principal."},
+    {text:"¿Qué información brinda el signo de f''(x) sobre la gráfica de f?",
+     options:["La concavidad de f: hacia arriba si f''(x)>0, hacia abajo si f''(x)<0","Si f es creciente o decreciente en ese punto","El dominio de la función f","Las raíces de la función f","Si f es continua o no en ese punto"], correct:0, type:"teoria",
+     why:"La segunda derivada mide cómo cambia la pendiente de f, y su signo indica la concavidad de la gráfica."},
+    {text:"Si f tiene un mínimo local en x=a y f es derivable en a, ¿cuánto vale f'(a)?",
+     options:["0","1","No se puede saber sin más datos","Siempre un valor negativo","Siempre un valor positivo"], correct:0, type:"teoria",
+     why:"En un extremo local (máximo o mínimo) donde f es derivable, la recta tangente es horizontal, por lo que la derivada en ese punto vale 0."},
+    {text:"Sea f(x) = |x|·x^(2/3) (equivalente a |x|^(5/3)). ¿Existe f'(0)?",
+     options:["Sí, f'(0)=0 (el exponente 5/3>1 'suaviza' el pico típico del valor absoluto)","No existe, porque toda función con valor absoluto tiene un pico en x=0","No existe: las derivadas laterales son distintas (−1 y 1)","Sí, pero f'(0)=1","No se puede determinar sin graficar"], correct:0, type:"avanzada",
+     why:"A diferencia de |x| (exponente 1), acá el exponente efectivo es 5/3>1, lo cual hace que la función sea derivable en x=0 con derivada 0, contra la intuición de que 'todo valor absoluto tiene un pico'."},
+    {text:"Sean f(x)=|x−1| (no derivable en x=1) y g(x)=x|x|. La composición (g∘f)(x) = |x−1|·|x−1| = (x−1)², que sí es derivable en todo punto. ¿Cuánto vale (g∘f)'(1)?",
+     options:["0","No existe, porque f no es derivable en x=1 y eso impide aplicar la regla de la cadena","1","2","−1"], correct:0, type:"avanzada",
+     why:"Aunque f no sea derivable en x=1, la composición se simplifica a (x−1)², un polinomio derivable en todo punto: (g∘f)'(x)=2(x−1), que en x=1 vale 0."},
+    {text:"Sea f(x) = { 3x²+x−1 si 1≤x≤2 ; 13−x si 2<x<4 ; √x+7 si x≥4 }. ¿Es f derivable en x=4?",
+     options:["No: f es continua en x=4 (ambas ramas dan 9), pero las derivadas laterales son distintas (−1 por izquierda y 1/4 por derecha) — es un punto anguloso","Sí, porque f es continua en x=4","No, porque f no es continua en x=4","Sí, con f'(4)=1/4","No se puede determinar sin más información"], correct:0, type:"avanzada",
+     why:"lim x→4⁻ (13−x)=9 y √4+7=9: f es continua en x=4. Pero (13−x)'=−1 y (√x+7)'=1/(2√x), que en x=4 vale 1/4; como las derivadas laterales no coinciden, f no es derivable ahí."},
+    {text:"Si f(x) = g[h(x)], y se sabe que h(3)=3, h'(3)=6, g'(3)=2, ¿cuánto vale f'(3)?",
+     options:["12","8","6","36","No se puede calcular sin conocer g y h explícitamente"], correct:0, type:"avanzada",
+     why:"Por regla de la cadena, f'(3)=g'(h(3))·h'(3)=g'(3)·h'(3)=2·6=12; no hace falta la fórmula de g ni de h, solo esos valores puntuales."},
+    {text:"Sea f(x) = √(x−1), con dominio [1,+∞). ¿Existe f'(1)?",
+     options:["No, porque el cociente incremental diverge (tangente vertical en el extremo del dominio)","Sí, f'(1)=0","Sí, f'(1)=1/2","No, porque x=1 no pertenece al dominio de f","No se puede determinar sin más información"], correct:0, type:"avanzada",
+     why:"[f(1+h)−f(1)]/h = √h/h = 1/√h, que diverge cuando h→0⁺: hay tangente vertical en x=1 y la derivada no existe ahí, aunque x=1 sí está en el dominio de f."},
+    {text:"Sea g(x) = (x³−7x²)(1/x − 1/x⁵). Simplificando primero el producto (en vez de aplicar directamente la regla del producto), se obtiene g(x) = x²−7x−1/x²+7/x³. ¿Cuál es g'(x)?",
+     options:["2x − 7 + 2/x³ − 21/x⁴","2x − 7 − 2/x³ + 21/x⁴","3x² − 14x − 1/x² + 7/x³","2x − 7 + 2/x² − 21/x³","x² − 7 − 1/x² + 7/x³"], correct:0, type:"avanzada",
+     why:"Derivando término a término: (x²)'=2x, (−7x)'=−7, (−1/x²)'=(−x⁻²)'=2x⁻³=2/x³, (7/x³)'=(7x⁻³)'=−21x⁻⁴=−21/x⁴."},
+  ],
+  g7: [
+    {text:"Si x² + y² = 25, ¿cuál es y' (dy/dx)?",
+     options:["−x/y","x/y","−y/x","−x/(2y)","x²/y²"], correct:0,
+     why:"Derivando implícitamente: 2x + 2y·y' = 0 ⇒ y' = −x/y."},
+    {text:"Con x²+y²=25, hallá y' en el punto (3,4).",
+     options:["−3/4","3/4","−4/3","4/3","−12"], correct:0,
+     why:"y' = −x/y; evaluando en (3,4): −3/4."},
+    {text:"Si xy + y² = 10, ¿cuál es y'?",
+     options:["−y/(x+2y)","y/(x+2y)","−x/(x+2y)","−y/(2x+y)","y/(x−2y)"], correct:0,
+     why:"Derivando implícitamente: y + x·y' + 2y·y' = 0 ⇒ y'(x+2y) = −y ⇒ y' = −y/(x+2y)."},
+    {text:"Con xy+y²=10, en el punto (9,1) (que verifica 9·1+1²=10), ¿cuánto vale y'?",
+     options:["−1/11","1/11","−9/11","−1/9","11"], correct:0,
+     why:"y' = −y/(x+2y); en (9,1): −1/(9+2) = −1/11."},
+    {text:"Para derivar y = x^(2x) por derivación logarítmica, el primer paso es aplicar ln a ambos lados. ¿Qué se obtiene?",
+     options:["ln y = 2x·ln x","ln y = 2x + ln x","ln y = x·ln(2x)","ln y = ln(2x)/x","ln y = 2·ln x·ln x"], correct:0,
+     why:"ln(x^(2x)) = 2x·ln x, por la propiedad del logaritmo de una potencia."},
+    {text:"Derivando implícitamente ln y = 2x·ln x respecto de x, ¿qué se obtiene para y'/y?",
+     options:["2 ln x + 2","2 ln x","2/x","2 ln x + 2x","ln x + 2"], correct:0,
+     why:"Por regla del producto: d/dx[2x·ln x] = 2·ln x + 2x·(1/x) = 2 ln x + 2."},
+    {text:"Entonces, ¿cuál es y' para y = x^(2x)?",
+     options:["x^(2x)·(2 ln x + 2)","x^(2x)·2 ln x","2x·x^(2x−1)","x^(2x)·(ln x + 2)","(2x)·x^(2x)"], correct:0,
+     why:"Como y'/y = 2 ln x + 2, despejando: y' = y·(2 ln x+2) = x^(2x)·(2 ln x + 2)."},
+    {text:"Para derivar y = (3x+1)⁵·(x−2)³ por derivación logarítmica, ¿cuál es ln y?",
+     options:["5 ln(3x+1) + 3 ln(x−2)","3 ln(3x+1) + 5 ln(x−2)","5 ln(3x+1) · 3 ln(x−2)","ln(3x+1) + ln(x−2)","15 ln(3x+1)(x−2)"], correct:0,
+     why:"ln(A⁵·B³) = 5 ln A + 3 ln B, aplicando la propiedad del logaritmo de un producto y de una potencia."},
+    {text:"Derivando ln y = 5 ln(3x+1) + 3 ln(x−2), ¿qué se obtiene para y'/y?",
+     options:["15/(3x+1) + 3/(x−2)","5/(3x+1) + 3/(x−2)","15/(3x+1) + 1/(x−2)","5/(3x+1) · 3/(x−2)","3/(3x+1) + 15/(x−2)"], correct:0,
+     why:"d/dx[5 ln(3x+1)] = 5·3/(3x+1) = 15/(3x+1); d/dx[3 ln(x−2)] = 3/(x−2)."},
+    {text:"Si C(x) es el costo total de producir x unidades, ¿qué representa C'(x)?",
+     options:["El costo marginal: el costo aproximado de producir una unidad adicional","El costo promedio por unidad","El costo total acumulado","El ingreso marginal","La ganancia total"], correct:0,
+     why:"La derivada del costo total respecto de la cantidad es, por definición, el costo marginal."},
+    {text:"Si la demanda es p = 100 − 2x y el ingreso es I(x) = x·p = 100x − 2x², ¿cuál es el ingreso marginal I'(x)?",
+     options:["100 − 4x","100 − 2x","−4x","100x − 4x","−2x"], correct:0,
+     why:"Derivando I(x)=100x−2x²: I'(x) = 100 − 4x."},
+    {text:"Con I(x)=100x−2x², ¿cuál es el ingreso marginal cuando x=10?",
+     options:["60","100","40","80","20"], correct:0,
+     why:"I'(x)=100−4x; en x=10: 100−40 = 60."},
+    {text:"La curva x²+y²=k pasa por el punto (3,4). ¿Cuánto vale k?",
+     options:["25","5","7","12","9"], correct:0,
+     why:"Reemplazando el punto en la ecuación: 3²+4² = 9+16 = 25 = k."},
+    {text:"¿Para qué valores de a y b es derivable (y continua) en x=1 la función f(x) = { x²+1 si x<1 ; ax+b si x≥1 }?",
+     options:["a=2, b=0","a=2, b=2","a=1, b=1","a=0, b=2","a=2, b=−2"], correct:0,
+     why:"Continuidad: 1²+1=2 debe igualar a+b. Derivabilidad: la derivada izquierda 2x→2 debe igualar a la derecha, que es a; entonces a=2, y de a+b=2 se obtiene b=0."},
+    {text:"Si x³ + y³ = 9xy, ¿cuál es y' (dy/dx)?",
+     options:["(3y−x²)/(y²−3x)","(x²−3y)/(y²−3x)","(3y−x²)/(3x−y²)","(y²−3x)/(3y−x²)","(9y−x²)/(y²−9x)"], correct:0,
+     why:"Derivando implícitamente: 3x²+3y²y' = 9y+9xy'. Agrupando los términos con y': y'(3y²−9x)=9y−3x². Dividiendo por 3: y'(y²−3x)=3y−x² ⇒ y'=(3y−x²)/(y²−3x)."},
+    {text:"¿Cuándo conviene usar derivación implícita en lugar de despejar y en función de x?",
+     options:["Cuando es difícil o imposible despejar y explícitamente en términos de x","Siempre, sin importar cómo esté planteada la ecuación","Solo cuando la ecuación es lineal en x e y","Nunca, es un método incorrecto matemáticamente","Solo cuando x vale 0"], correct:0, type:"teoria",
+     why:"La derivación implícita es especialmente útil cuando y no puede aislarse fácilmente (o no puede aislarse en absoluto) como función explícita de x."},
+    {text:"¿En qué casos conviene aplicar derivación logarítmica antes de derivar?",
+     options:["Cuando la variable está en el exponente, o hay un producto/cociente de varios factores complicados","Únicamente para funciones polinómicas simples","Solo cuando f(x)=0 en algún punto","Nunca; siempre conviene derivar directamente","Solo para funciones pares"], correct:0, type:"teoria",
+     why:"Tomar logaritmo convierte potencias variables en productos y productos/cocientes en sumas/restas, simplificando mucho la derivación en esos casos."},
+    {text:"Si G(x) = I(x) − C(x) es la función de ganancia, ¿qué representa G'(x)?",
+     options:["La ganancia marginal: el cambio aproximado en la ganancia al producir una unidad más","El costo marginal de producción","El ingreso total acumulado","El precio de venta por unidad","La ganancia promedio por unidad"], correct:0, type:"teoria",
+     why:"Al ser G la resta de ingreso y costo, su derivada representa la variación marginal de la ganancia respecto de la cantidad producida."},
+    {text:"Al derivar implícitamente x²+y²=25, y' queda expresado en términos de x e y. ¿Por qué ocurre esto, a diferencia de una derivación explícita?",
+     options:["Porque y no está despejada como función explícita de x, entonces y' se obtiene en función de ambas variables","Porque la ecuación x²+y²=25 no tiene solución real","Porque esa ecuación no es derivable","Porque y' siempre depende de dos variables en cualquier tipo de derivación","Es un error: y' no debería depender de y"], correct:0, type:"teoria",
+     why:"Como y se trata como función implícita de x sin despejarla, al derivar aparecen términos con y y con y', y el resultado queda naturalmente en función de ambas."},
+    {text:"Antes de derivar logarítmicamente y = x^(2x), ¿por qué es útil aplicar propiedades de logaritmos?",
+     options:["Porque convierten la potencia variable en un producto (2x·ln x), mucho más fácil de derivar","Porque eliminan por completo la necesidad de derivar","Porque hacen que y se convierta en una constante","Porque cambian el dominio de la función original","No es útil: conviene derivar directamente sin logaritmos"], correct:0, type:"teoria",
+     why:"ln(x^(2x)) = 2x·ln x transforma una potencia con exponente variable en un producto, que se deriva con reglas conocidas (producto y cadena)."},
+    {text:"Si C'(x) > 0 para cierto nivel de producción x, ¿qué indica esto sobre el costo total?",
+     options:["Que el costo total aumenta al producir una unidad adicional en ese nivel","Que el costo total disminuye al producir más","Que el costo total es negativo","Que la producción está en su nivel máximo","Que el costo marginal es constante en todo el dominio"], correct:0, type:"teoria",
+     why:"C'(x) es el costo marginal; si es positivo, significa que producir una unidad adicional incrementa el costo total en ese nivel de producción."},
+    {text:"Si 3x²y + 3xy − y³ = −27x − 2y, ¿cuál es y' (dy/dx)?",
+     options:["y' = −(27+6xy+3y)/(3x²+3x−3y²+2)","y' = (27+6xy+3y)/(3x²+3x−3y²+2)","y' = −(27+6xy+3y)/(3x²+3x−3y²−2)","y' = −(27+3y)/(3x²+3x−3y²)","y' = (6xy+3y)/(3x²+3x−3y²+2)"], correct:0, type:"avanzada",
+     why:"Derivando cada término: 6xy+3x²y'+3y+3xy'−3y²y' = −27−2y'. Agrupando los términos con y': y'(3x²+3x−3y²+2) = −27−6xy−3y."},
+    {text:"Si √x + √y = √a (con a constante), ¿cuál es dy/dx?",
+     options:["−√(y/x)","√(y/x)","−√(x/y)","−(√y)/(2√x)","−1"], correct:0, type:"avanzada",
+     why:"Derivando: 1/(2√x) + y'/(2√y) = 0 ⇒ y' = −√y/√x = −√(y/x)."},
+    {text:"Si xʸ = yˣ, ¿cuál es dy/dx (aplicando logaritmo a ambos lados)?",
+     options:["y(x·ln y − y) / [x(y·ln x − x)]","x(y·ln x − x) / [y(x·ln y − y)]","y(x·ln y + y) / [x(y·ln x + x)]","y·ln y / (x·ln x)","(y−x)/(x−y)"], correct:0, type:"avanzada",
+     why:"Tomando ln: y·ln x = x·ln y. Derivando: y'ln x + y/x = ln y + x·y'/y. Agrupando y' y despejando: y' = y(x·ln y−y) / [x(y·ln x−x)]."},
+    {text:"Si y = ˣ√x (es decir, y = x^(1/x)), ¿cuál es y'?",
+     options:["y' = x^(1/x)·(1 − ln x)/x²","y' = x^(1/x)·(1 + ln x)/x²","y' = x^(1/x)·(ln x − 1)/x²","y' = x^(1/x)·(1−ln x)/x","y' = (1−ln x)/x²"], correct:0, type:"avanzada",
+     why:"ln y = (ln x)/x. Derivando: y'/y = [1−ln x]/x². Despejando: y' = x^(1/x)·(1−ln x)/x²."},
+    {text:"Sea f(x) = ln(3−2x). ¿Cuál es f'''(x) (la derivada tercera)?",
+     options:["−16/(3−2x)³","−8/(3−2x)³","16/(3−2x)³","−16/(3−2x)⁴","−2/(3−2x)³"], correct:0, type:"avanzada",
+     why:"f'(x)=−2/(3−2x); f''(x)=−4/(3−2x)²; f'''(x)=−16/(3−2x)³, derivando la cadena sucesivamente."},
+    {text:"La demanda de un producto es p = 108/(x+2) − 3, y el ingreso es R(x) = x·p = 108x/(x+2) − 3x. ¿Cuál es el ingreso marginal R'(x)?",
+     options:["216/(x+2)² − 3","108/(x+2)² − 3","−216/(x+2)² − 3","216/(x+2) − 3","108/(x+2)² + 3"], correct:0, type:"avanzada",
+     why:"Por regla del cociente, la derivada de 108x/(x+2) es [108(x+2)−108x]/(x+2)²=216/(x+2)². La derivada de −3x es −3."},
+  ]
+};
+
+const CORRECT_PHRASES = [
+  "¡Excelente!", "¡Así se hace!", "¡Perfecto!", "¡Muy bien resuelto!",
+  "¡Eso es exactamente!", "¡Impecable!", "¡Ahí está!", "¡Se nota que estudiaste!",
+  "¡Vas con todo!", "¡Razonamiento correcto!", "¡Un aplauso!", "¡Bien pensado!",
+  "¡Ese es el criterio!", "¡Vas por muy buen camino!", "¡Dominás el tema!"
+];
+let lastPhraseIdx = -1;
+function pickCorrectPhrase(){
+  let i;
+  do { i = Math.floor(Math.random()*CORRECT_PHRASES.length); } while (i === lastPhraseIdx && CORRECT_PHRASES.length > 1);
+  lastPhraseIdx = i;
+  return CORRECT_PHRASES[i];
+}
+
+let session = null; // {topicId, questions:[...10 shuffled with shuffled options], idx, score}
+
+function $(id){ return document.getElementById(id); }
+
+function show(id){
+  ["screen-gate","screen-disabled","screen-home","screen-quiz","screen-result","screen-admin"].forEach(s=>{
+    $(s).hidden = (s !== id);
+  });
+}
+
+// ---- Ventana de deshabilitación temporal (ej. durante un parcial) ----
+// Lista de bloqueos: cada uno {from, to?} en UTC (ISO 8601 con "Z"). Mientras el momento
+// actual caiga dentro de un bloqueo, el quiz muestra "screen-disabled" en vez del acceso
+// normal, sin depender de que Gustavo suba nada a mano en ese horario exacto. Si "to" no
+// está, el bloqueo queda abierto (no se reactiva solo) hasta que se edite este archivo.
+// Agregado el 2026-09-17 a pedido de Gustavo: parcial el martes 22/09/2026, deshabilitado
+// desde las 18:00 hora Argentina (UTC-3) ese día = 21:00 UTC. Sin fecha de reactivación
+// automática todavía (no se confirmó hasta cuándo) — avisar para agregar "to" cuando la
+// sepamos, o Gustavo puede pedir reactivarlo manualmente en cualquier momento.
+const DISABLE_WINDOWS = [
+  { from: "2026-09-22T21:00:00Z" }, // martes 22/09/2026, 18:00 ART en adelante
+];
+function isDisabledNow(){
+  const now = Date.now();
+  return DISABLE_WINDOWS.some(w => now >= Date.parse(w.from) && (!w.to || now < Date.parse(w.to)));
+}
+
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+
+function logEntry(code){
+  // Registro silencioso de cada ingreso válido (código + fecha/hora automática de
+  // Google Forms), en una planilla aparte de la de resultados. Sirve para que Gustavo
+  // pueda ver cuántas veces entró cada código y detectar un código que se filtró
+  // (por ejemplo, el mismo código entrando muchas más veces de lo esperado). No bloquea
+  // ni condiciona el ingreso del alumno: si falla, no pasa nada visible para el alumno.
+  try {
+    const body = new URLSearchParams();
+    body.set(ENTRY_LOG_CODIGO, code);
+    fetch(ENTRY_LOG_FORM_ACTION, {
+      method: "POST",
+      mode: "no-cors",
+      headers: {"Content-Type": "application/x-www-form-urlencoded"},
+      body: body.toString()
+    }).catch(()=>{});
+  } catch(e){}
+}
+
+function tryEnter(){
+  if(isDisabledNow()){ show("screen-disabled"); return; }
+  const val = $("codeInput").value.trim().toUpperCase();
+  if(val === TEACHER_CODE){
+    currentStudent = { code: val, name: STUDENTS[val] };
+    $("gateError").textContent = "";
+    goAdmin();
+    return;
+  }
+  if(STUDENTS.hasOwnProperty(val)){
+    currentStudent = { code: val, name: STUDENTS[val] };
+    $("gateError").textContent = "";
+    logEntry(val);
+    goHome();
+  } else {
+    $("gateError").textContent = "Código incorrecto. Consultá con tu profesor.";
+  }
+}
+$("codeInput") && $("codeInput").addEventListener("keydown", e=>{ if(e.key==="Enter") tryEnter(); });
+
+function goHome(){
+  renderTopics();
+  show("screen-home");
+}
+
+function renderTopics(){
+  const grid = $("topicGrid");
+  grid.innerHTML = "";
+  TOPICS.forEach(t=>{
+    const card = document.createElement("div");
+    card.className = "topic-card " + (t.ready ? "active" : "locked");
+    card.innerHTML = `
+      <span class="tag ${t.ready?'ready':'soon'}">${t.ready?'Disponible':'Próximamente'}</span>
+      <div class="num">${t.num}</div>
+      <h3>Guía ${t.num}</h3>
+      <div style="font-size:12.8px;color:#4A5170;">${t.name}</div>
+    `;
+    if(t.ready){ card.onclick = () => startQuiz(t.id); }
+    grid.appendChild(card);
+  });
+}
+
+// ---- Panel del profesor ----
+function goAdmin(){
+  show("screen-admin");
+  loadAdminData();
+}
+
+function parseResultValue(raw){
+  // El campo puede venir en formato nuevo "Guía N · puntaje" o en el formato viejo,
+  // anterior a la corrección del 2026-09-18, que era solo "puntaje" (ej. "11/15").
+  raw = String(raw || "");
+  if(raw.includes("·")){
+    const [guia, score] = raw.split("·").map(s=>s.trim());
+    return { guia, score };
+  }
+  return { guia: "(sin datos — intento previo a la actualización)", score: raw.trim() };
+}
+
+async function loadAdminData(){
+  const box = $("adminBody");
+  if(!ADMIN_DATA_URL){
+    box.innerHTML = `<p class="admin-status admin-error">Todavía no está configurada la fuente de datos del panel (falta desplegar el Apps Script y pegar su URL en ADMIN_DATA_URL). Mientras tanto este panel no puede mostrar resultados.</p>`;
+    return;
+  }
+  box.innerHTML = `<p class="admin-status">Cargando resultados...</p>`;
+  try {
+    const res = await fetch(ADMIN_DATA_URL, { method: "GET" });
+    if(!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+    renderAdmin(data.rows || []);
+  } catch(err){
+    box.innerHTML = `<p class="admin-status admin-error">No se pudieron cargar los resultados (${err.message}).</p>
+      <div style="text-align:center;"><button class="btn btn-outline" onclick="loadAdminData()">Reintentar</button></div>`;
+  }
+}
+
+function renderAdmin(rows){
+  const byCode = {};
+  rows.forEach(r=>{
+    if(!r || !r.code) return;
+    const code = String(r.code).trim().toUpperCase();
+    if(!byCode[code]) byCode[code] = [];
+    byCode[code].push(r);
+  });
+
+  const codes = Object.keys(STUDENTS)
+    .filter(c => c !== TEACHER_CODE)
+    .sort((a,b) => STUDENTS[a].localeCompare(STUDENTS[b], "es"));
+
+  const box = $("adminBody");
+  box.innerHTML = "";
+  codes.forEach(code=>{
+    const attempts = (byCode[code] || []).slice().sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    const item = document.createElement("div");
+    item.className = "admin-item";
+    const summary = attempts.length
+      ? `${attempts.length} intento${attempts.length===1?'':'s'}`
+      : "sin intentos";
+    item.innerHTML = `
+      <div class="admin-item-head">
+        <span class="admin-item-name">${STUDENTS[code]}</span>
+        <span class="admin-item-summary">${summary}</span>
+      </div>
+      <div class="admin-item-detail" hidden></div>
+    `;
+    const detail = item.querySelector(".admin-item-detail");
+    if(attempts.length){
+      detail.innerHTML = `
+        <table class="admin-table">
+          <thead><tr><th>Fecha</th><th>Guía</th><th>Puntaje</th></tr></thead>
+          <tbody>
+            ${attempts.map(a=>{
+              const {guia, score} = parseResultValue(a.value);
+              let fecha = a.timestamp;
+              const d = new Date(a.timestamp);
+              if(!isNaN(d)) fecha = d.toLocaleString("es-AR");
+              return `<tr><td>${fecha}</td><td>${guia}</td><td>${score}</td></tr>`;
+            }).join("")}
+          </tbody>
+        </table>`;
+    } else {
+      detail.innerHTML = `<p class="admin-empty">Este alumno todavía no hizo ningún intento.</p>`;
+    }
+    item.querySelector(".admin-item-head").onclick = () => { detail.hidden = !detail.hidden; };
+    box.appendChild(item);
+  });
+}
+
+function startQuiz(topicId){
+  const bank = QUESTION_BANKS[topicId];
+  const teoricas = bank.filter(q=>q.type==="teoria");
+  const avanzadas = bank.filter(q=>q.type==="avanzada");
+  const simples = bank.filter(q=>q.type!=="teoria" && q.type!=="avanzada");
+  const numAvanzadas = Math.min(5, avanzadas.length);
+  const numSimples = 10 - numAvanzadas;
+  const picked = shuffle(
+    shuffle(simples).slice(0, numSimples)
+      .concat(shuffle(avanzadas).slice(0, numAvanzadas))
+      .concat(shuffle(teoricas).slice(0, 5))
+  );
+  const chosen = picked.map(q=>{
+    const optOrder = shuffle(q.options.map((opt,i)=>({opt,i})));
+    return {
+      text:q.text, why:q.why,
+      options: optOrder.map(o=>o.opt),
+      correct: optOrder.findIndex(o=>o.i === q.correct)
+    };
+  });
+  session = { topicId, questions:chosen, idx:0, score:0 };
+  $("quizTopicName").textContent = "Guía " + TOPICS.find(t=>t.id===topicId).num + " · " + TOPICS.find(t=>t.id===topicId).name;
+  renderQuestion();
+  show("screen-quiz");
+}
+
+function renderQuestion(){
+  const q = session.questions[session.idx];
+  $("quizProg").textContent = `Pregunta ${session.idx+1} de ${session.questions.length}`;
+  $("quizScore").textContent = `Aciertos: ${session.score}`;
+  $("progressFill").style.width = ((session.idx)/session.questions.length*100) + "%";
+  $("qText").textContent = q.text;
+  $("qFeedback").className = "feedback";
+  $("qFeedback").textContent = "";
+  $("nextBtn").style.display = "none";
+
+  const optsDiv = $("qOptions");
+  optsDiv.innerHTML = "";
+  q.options.forEach((opt, i)=>{
+    const b = document.createElement("button");
+    b.className = "opt";
+    b.textContent = opt;
+    b.onclick = () => selectAnswer(i);
+    optsDiv.appendChild(b);
+  });
+}
+
+function selectAnswer(i){
+  const q = session.questions[session.idx];
+  const buttons = document.querySelectorAll("#qOptions .opt");
+  buttons.forEach(b=>b.classList.add("disabled"));
+  buttons.forEach((b,idx)=>{ b.onclick = null; });
+
+  const correct = (i === q.correct);
+  if(correct) session.score++;
+
+  buttons[q.correct].classList.add("correct");
+  if(!correct) buttons[i].classList.add("incorrect");
+
+  const fb = $("qFeedback");
+  fb.classList.add("show", correct ? "ok" : "bad");
+  fb.innerHTML = `<b>${correct ? pickCorrectPhrase() : "Incorrecto"}</b>${q.why}`;
+
+  $("quizScore").textContent = `Aciertos: ${session.score}`;
+  $("progressFill").style.width = ((session.idx+1)/session.questions.length*100) + "%";
+  $("nextBtn").textContent = (session.idx === session.questions.length-1) ? "Ver resultado" : "Siguiente";
+  $("nextBtn").style.display = "inline-block";
+}
+
+function nextQuestion(){
+  session.idx++;
+  if(session.idx >= session.questions.length){
+    showResult();
+  } else {
+    renderQuestion();
+  }
+}
+
+function showResult(){
+  const total = session.questions.length;
+  const score = session.score;
+  const pct = Math.round(score/total*100);
+  const topic = TOPICS.find(t=>t.id===session.topicId);
+  $("resultTopic").textContent = "Guía " + topic.num + " · " + topic.name;
+  $("resultScore").textContent = `${score} / ${total}`;
+  $("resultPct").textContent = pct + "% de respuestas correctas";
+
+  let msg;
+  if(pct >= 90) msg = "Excelente — dominás el tema. Probá otro repaso para no perder el ritmo.";
+  else if(pct >= 70) msg = "Muy bien — te falta afianzar algún detalle. Repasá las que fallaste y volvé a intentar.";
+  else if(pct >= 50) msg = "Vas por buen camino, pero conviene repasar la guía antes del parcial.";
+  else msg = "Conviene volver a la guía y las clases antes de reintentar — todavía hay conceptos para afianzar.";
+  $("resultMsg").textContent = msg;
+
+  const code = currentStudent ? currentStudent.code : "SIN-CODIGO";
+  const scoreTxt = `${score}/${total}`;
+  // El valor que se envía al formulario incluye la guía/tema, para poder
+  // evaluar por tema en la planilla de resultados — el texto en pantalla
+  // ("Puntaje") se mantiene limpio, solo con el puntaje.
+  lastSubmitValue = `Guía ${topic.num} · ${scoreTxt}`;
+  $("submitCode").textContent = currentStudent ? currentStudent.code : "—";
+  $("submitScore").textContent = scoreTxt;
+  $("submitBox").classList.remove("sent","error");
+  $("submitStatus").textContent = "Enviando resultado a tu profesor...";
+
+  show("screen-result");
+  sendResultAuto(code, lastSubmitValue);
+}
+
+// Envío automático real: esto SOLO funciona porque esta página vive fuera de
+// Claude Artifacts (en GitHub Pages no hay sandbox ni CSP que bloqueen la
+// salida de red hacia Google). Dentro de un Claude Artifact esta misma técnica
+// se probó en vivo y no salía ningún pedido de red — acá sí sale.
+//
+// Sigue siendo un POST "no-cors": el navegador no nos deja leer la respuesta
+// de Google (queda opaca), así que no hay forma de confirmar el éxito con
+// 100% de certeza desde JS. Por eso el botón "Confirmar envío manualmente"
+// queda siempre visible como respaldo — no se oculta ni en el caso "exitoso".
+function sendResultAuto(code, scoreTxt){
+  try {
+    const body = new URLSearchParams();
+    body.set(ENTRY_CODIGO, code);
+    body.set(ENTRY_PUNTAJE, scoreTxt);
+
+    fetch(RESULTS_FORM_ACTION, {
+      method: "POST",
+      mode: "no-cors",
+      headers: {"Content-Type": "application/x-www-form-urlencoded"},
+      body: body.toString()
+    }).then(()=>{
+      $("submitBox").classList.remove("error");
+      $("submitBox").classList.add("sent");
+      $("submitStatus").textContent = "Resultado enviado a tu profesor ✓ (si tu profesor te avisa que no le llegó, tocá igual el botón de abajo para confirmarlo a mano).";
+    }).catch(()=>{
+      $("submitBox").classList.remove("sent");
+      $("submitBox").classList.add("error");
+      $("submitStatus").textContent = "No se pudo enviar automáticamente — tocá el botón para confirmarlo a mano.";
+    });
+  } catch(e){
+    $("submitBox").classList.remove("sent");
+    $("submitBox").classList.add("error");
+    $("submitStatus").textContent = "No se pudo enviar automáticamente — tocá el botón para confirmarlo a mano.";
+  }
+}
+
+function sendResultManual(){
+  // Respaldo de un solo toque: navega a este mismo formulario, pero con el
+  // código y el puntaje ya completados por URL, así el alumno solo confirma
+  // con "Enviar" ahí — sin tener que escribir nada.
+  const code = currentStudent ? currentStudent.code : "SIN-CODIGO";
+  const scoreTxt = lastSubmitValue || $("submitScore").textContent;
+  const url = RESULTS_FORM_URL
+    + "?usp=pp_url"
+    + "&" + ENTRY_CODIGO + "=" + encodeURIComponent(code)
+    + "&" + ENTRY_PUNTAJE + "=" + encodeURIComponent(scoreTxt);
+  window.location.href = url;
+}
+
+function retryTopic(){
+  startQuiz(session.topicId);
+}
+
+// init logos
+document.addEventListener("DOMContentLoaded", ()=>{
+  $("logoGate") && ($("logoGate").src = LOGO_SRC);
+  $("logoDisabled") && ($("logoDisabled").src = LOGO_SRC);
+  $("logoHome") && ($("logoHome").src = LOGO_SRC);
+  $("logoQuiz") && ($("logoQuiz").src = LOGO_SRC);
+  $("logoAdmin") && ($("logoAdmin").src = LOGO_SRC);
+  if(isDisabledNow()) show("screen-disabled");
+});
+// Revisa cada 60s por si alguien deja la pantalla de acceso abierta justo cuando
+// se cruza el horario de deshabilitación, sin necesidad de recargar la página.
+setInterval(()=>{
+  if(isDisabledNow() && !$("screen-gate").hidden) show("screen-disabled");
+}, 60000);
+</script>
+
+</body></html>
