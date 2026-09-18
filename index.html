@@ -131,6 +131,20 @@
   .submit-box.error .submit-hint{color:#ffb3b3;}
 
   .footer-note{margin-top:30px; padding-top:14px; border-top:1px solid var(--border); font-size:11px; color:var(--gray3); text-align:center; font-style:italic;}
+
+  /* ---- ADMIN ---- */
+  .admin-item{background:var(--panel2); border:1px solid var(--border); border-radius:10px; margin-bottom:8px; overflow:hidden;}
+  .admin-item-head{display:flex; justify-content:space-between; align-items:center; padding:12px 16px; cursor:pointer;}
+  .admin-item-head:hover{background:var(--panel);}
+  .admin-item-name{font-weight:bold; color:var(--navy); font-size:14.5px;}
+  .admin-item-summary{font-size:12.5px; color:var(--gray2);}
+  .admin-item-detail{padding:0 16px 14px;}
+  .admin-empty{font-size:12.5px; color:var(--gray3); font-style:italic; margin:0;}
+  .admin-table{width:100%; border-collapse:collapse; font-size:13px;}
+  .admin-table th{text-align:left; color:var(--gray2); font-size:11px; text-transform:uppercase; letter-spacing:.5px; padding:6px 8px; border-bottom:1.5px solid var(--border);}
+  .admin-table td{padding:7px 8px; border-bottom:1px solid var(--border); color:#2A3040;}
+  .admin-status{text-align:center; color:var(--gray2); font-size:13.5px; padding:24px 0;}
+  .admin-error{color:#B4232F;}
 </style>
 
 <div class="wrap">
@@ -148,6 +162,17 @@
         <button class="btn btn-gold" onclick="tryEnter()">Entrar</button>
       </div>
       <div id="gateError"></div>
+    </div>
+  </div>
+
+  <!-- DISABLED (deshabilitado temporalmente, ej. durante un parcial) -->
+  <div id="screen-disabled" hidden>
+    <div class="gate-card">
+      <img id="logoDisabled" alt="Aprender Económicas">
+      <div class="kicker">Aprender Económicas · Matemática II</div>
+      <h1>Práctica no disponible</h1>
+      <div class="author">Gustavo Lugones · Contador Público Nacional</div>
+      <p>Este cuestionario está deshabilitado temporalmente. Volvé a intentarlo más tarde.</p>
     </div>
   </div>
 
@@ -185,6 +210,21 @@
     <div class="quiz-actions">
       <button class="btn btn-gold" id="nextBtn" style="display:none" onclick="nextQuestion()">Siguiente</button>
     </div>
+  </div>
+
+  <!-- ADMIN (panel del profesor, solo entra con el código GUSTAVOL) -->
+  <div id="screen-admin" hidden>
+    <div class="topbar">
+      <img id="logoAdmin" alt="logo">
+      <div class="brand"><b>Aprender Económicas</b> · Panel del profesor</div>
+    </div>
+    <div class="home-header">
+      <div class="kicker">Matemática II · Primer Parcial</div>
+      <h1>Resultados por alumno</h1>
+      <p>Tocá un alumno para ver qué guías intentó, cuántas veces entró y qué puntaje sacó en cada intento.</p>
+    </div>
+    <div id="adminBody"></div>
+    <div class="footer-note"><button class="btn btn-outline" onclick="location.reload()">Cerrar panel</button></div>
   </div>
 
   <!-- RESULT -->
@@ -271,12 +311,22 @@ const STUDENTS = {
   "GUSTAVOL": "Gustavo Lugones",
 };
 let currentStudent = null; // {code, name}
+let lastSubmitValue = ""; // valor completo (con tema) que se envía al form, separado del texto que se muestra en pantalla
 const RESULTS_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLScpdqqr94KV3-CuEDR3L0w2Q7uLbIIdpMnYi2Qt7aHuKftisA/viewform";
 const RESULTS_FORM_ACTION = "https://docs.google.com/forms/d/e/1FAIpQLScpdqqr94KV3-CuEDR3L0w2Q7uLbIIdpMnYi2Qt7aHuKftisA/formResponse";
 const ENTRY_CODIGO = "entry.1001672919";
 const ENTRY_PUNTAJE = "entry.168320209";
 const ENTRY_LOG_FORM_ACTION = "https://docs.google.com/forms/d/e/1FAIpQLSeruyjj8YcG6s9-2qLJBOFLTJ6z_aqWsCXkHkuB4crYvmGysQ/formResponse";
 const ENTRY_LOG_CODIGO = "entry.1076467819";
+
+// ---- Panel del profesor ----
+// El código GUSTAVOL ya no rinde el cuestionario: entra directo a un panel de
+// resultados por alumno (ver goAdmin()/loadAdminData() más abajo). Ese panel lee
+// los datos desde un Google Apps Script "intermediario" (no desde la planilla
+// directamente), para no tener que dejar la planilla de resultados con un link
+// público. Instrucciones de despliegue: ver Code.gs.
+const TEACHER_CODE = "GUSTAVOL";
+const ADMIN_DATA_URL = ""; // Gustavo: pegá acá la URL que termina en /exec, una vez desplegado el Apps Script (ver Code.gs)
 const LOGO_SRC = "data:image/jpeg;base64,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";
 
 const TOPICS = [
@@ -892,9 +942,26 @@ let session = null; // {topicId, questions:[...10 shuffled with shuffled options
 function $(id){ return document.getElementById(id); }
 
 function show(id){
-  ["screen-gate","screen-home","screen-quiz","screen-result"].forEach(s=>{
+  ["screen-gate","screen-disabled","screen-home","screen-quiz","screen-result","screen-admin"].forEach(s=>{
     $(s).hidden = (s !== id);
   });
+}
+
+// ---- Ventana de deshabilitación temporal (ej. durante un parcial) ----
+// Lista de bloqueos: cada uno {from, to?} en UTC (ISO 8601 con "Z"). Mientras el momento
+// actual caiga dentro de un bloqueo, el quiz muestra "screen-disabled" en vez del acceso
+// normal, sin depender de que Gustavo suba nada a mano en ese horario exacto. Si "to" no
+// está, el bloqueo queda abierto (no se reactiva solo) hasta que se edite este archivo.
+// Agregado el 2026-09-17 a pedido de Gustavo: parcial el martes 22/09/2026, deshabilitado
+// desde las 18:00 hora Argentina (UTC-3) ese día = 21:00 UTC. Sin fecha de reactivación
+// automática todavía (no se confirmó hasta cuándo) — avisar para agregar "to" cuando la
+// sepamos, o Gustavo puede pedir reactivarlo manualmente en cualquier momento.
+const DISABLE_WINDOWS = [
+  { from: "2026-09-22T21:00:00Z" }, // martes 22/09/2026, 18:00 ART en adelante
+];
+function isDisabledNow(){
+  const now = Date.now();
+  return DISABLE_WINDOWS.some(w => now >= Date.parse(w.from) && (!w.to || now < Date.parse(w.to)));
 }
 
 function shuffle(arr){
@@ -925,7 +992,14 @@ function logEntry(code){
 }
 
 function tryEnter(){
+  if(isDisabledNow()){ show("screen-disabled"); return; }
   const val = $("codeInput").value.trim().toUpperCase();
+  if(val === TEACHER_CODE){
+    currentStudent = { code: val, name: STUDENTS[val] };
+    $("gateError").textContent = "";
+    goAdmin();
+    return;
+  }
   if(STUDENTS.hasOwnProperty(val)){
     currentStudent = { code: val, name: STUDENTS[val] };
     $("gateError").textContent = "";
@@ -956,6 +1030,94 @@ function renderTopics(){
     `;
     if(t.ready){ card.onclick = () => startQuiz(t.id); }
     grid.appendChild(card);
+  });
+}
+
+// ---- Panel del profesor ----
+function goAdmin(){
+  show("screen-admin");
+  loadAdminData();
+}
+
+function parseResultValue(raw){
+  // El campo puede venir en formato nuevo "Guía N · puntaje" o en el formato viejo,
+  // anterior a la corrección del 2026-09-18, que era solo "puntaje" (ej. "11/15").
+  raw = String(raw || "");
+  if(raw.includes("·")){
+    const [guia, score] = raw.split("·").map(s=>s.trim());
+    return { guia, score };
+  }
+  return { guia: "(sin datos — intento previo a la actualización)", score: raw.trim() };
+}
+
+async function loadAdminData(){
+  const box = $("adminBody");
+  if(!ADMIN_DATA_URL){
+    box.innerHTML = `<p class="admin-status admin-error">Todavía no está configurada la fuente de datos del panel (falta desplegar el Apps Script y pegar su URL en ADMIN_DATA_URL). Mientras tanto este panel no puede mostrar resultados.</p>`;
+    return;
+  }
+  box.innerHTML = `<p class="admin-status">Cargando resultados...</p>`;
+  try {
+    const res = await fetch(ADMIN_DATA_URL, { method: "GET" });
+    if(!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+    renderAdmin(data.rows || []);
+  } catch(err){
+    box.innerHTML = `<p class="admin-status admin-error">No se pudieron cargar los resultados (${err.message}).</p>
+      <div style="text-align:center;"><button class="btn btn-outline" onclick="loadAdminData()">Reintentar</button></div>`;
+  }
+}
+
+function renderAdmin(rows){
+  const byCode = {};
+  rows.forEach(r=>{
+    if(!r || !r.code) return;
+    const code = String(r.code).trim().toUpperCase();
+    if(!byCode[code]) byCode[code] = [];
+    byCode[code].push(r);
+  });
+
+  const codes = Object.keys(STUDENTS)
+    .filter(c => c !== TEACHER_CODE)
+    .sort((a,b) => STUDENTS[a].localeCompare(STUDENTS[b], "es"));
+
+  const box = $("adminBody");
+  box.innerHTML = "";
+  codes.forEach(code=>{
+    const attempts = (byCode[code] || []).slice().sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    const item = document.createElement("div");
+    item.className = "admin-item";
+    const summary = attempts.length
+      ? `${attempts.length} intento${attempts.length===1?'':'s'}`
+      : "sin intentos";
+    item.innerHTML = `
+      <div class="admin-item-head">
+        <span class="admin-item-name">${STUDENTS[code]}</span>
+        <span class="admin-item-summary">${summary}</span>
+      </div>
+      <div class="admin-item-detail" hidden></div>
+    `;
+    const detail = item.querySelector(".admin-item-detail");
+    if(attempts.length){
+      detail.innerHTML = `
+        <table class="admin-table">
+          <thead><tr><th>Fecha</th><th>Guía</th><th>Puntaje</th></tr></thead>
+          <tbody>
+            ${attempts.map(a=>{
+              const {guia, score} = parseResultValue(a.value);
+              let fecha = a.timestamp;
+              const d = new Date(a.timestamp);
+              if(!isNaN(d)) fecha = d.toLocaleString("es-AR");
+              return `<tr><td>${fecha}</td><td>${guia}</td><td>${score}</td></tr>`;
+            }).join("")}
+          </tbody>
+        </table>`;
+    } else {
+      detail.innerHTML = `<p class="admin-empty">Este alumno todavía no hizo ningún intento.</p>`;
+    }
+    item.querySelector(".admin-item-head").onclick = () => { detail.hidden = !detail.hidden; };
+    box.appendChild(item);
   });
 }
 
@@ -1055,13 +1217,17 @@ function showResult(){
 
   const code = currentStudent ? currentStudent.code : "SIN-CODIGO";
   const scoreTxt = `${score}/${total}`;
+  // El valor que se envía al formulario incluye la guía/tema, para poder
+  // evaluar por tema en la planilla de resultados — el texto en pantalla
+  // ("Puntaje") se mantiene limpio, solo con el puntaje.
+  lastSubmitValue = `Guía ${topic.num} · ${scoreTxt}`;
   $("submitCode").textContent = currentStudent ? currentStudent.code : "—";
   $("submitScore").textContent = scoreTxt;
   $("submitBox").classList.remove("sent","error");
   $("submitStatus").textContent = "Enviando resultado a tu profesor...";
 
   show("screen-result");
-  sendResultAuto(code, scoreTxt);
+  sendResultAuto(code, lastSubmitValue);
 }
 
 // Envío automático real: esto SOLO funciona porque esta página vive fuera de
@@ -1105,7 +1271,7 @@ function sendResultManual(){
   // código y el puntaje ya completados por URL, así el alumno solo confirma
   // con "Enviar" ahí — sin tener que escribir nada.
   const code = currentStudent ? currentStudent.code : "SIN-CODIGO";
-  const scoreTxt = $("submitScore").textContent;
+  const scoreTxt = lastSubmitValue || $("submitScore").textContent;
   const url = RESULTS_FORM_URL
     + "?usp=pp_url"
     + "&" + ENTRY_CODIGO + "=" + encodeURIComponent(code)
@@ -1120,9 +1286,17 @@ function retryTopic(){
 // init logos
 document.addEventListener("DOMContentLoaded", ()=>{
   $("logoGate") && ($("logoGate").src = LOGO_SRC);
+  $("logoDisabled") && ($("logoDisabled").src = LOGO_SRC);
   $("logoHome") && ($("logoHome").src = LOGO_SRC);
   $("logoQuiz") && ($("logoQuiz").src = LOGO_SRC);
+  $("logoAdmin") && ($("logoAdmin").src = LOGO_SRC);
+  if(isDisabledNow()) show("screen-disabled");
 });
+// Revisa cada 60s por si alguien deja la pantalla de acceso abierta justo cuando
+// se cruza el horario de deshabilitación, sin necesidad de recargar la página.
+setInterval(()=>{
+  if(isDisabledNow() && !$("screen-gate").hidden) show("screen-disabled");
+}, 60000);
 </script>
 
 </body></html>
