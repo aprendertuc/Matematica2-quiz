@@ -1586,6 +1586,22 @@ function parseResultValue(raw){
   return { guia: "(sin datos — intento previo a la actualización)", score: raw.trim() };
 }
 
+// Mapa num de guía -> parcial (1 o 2), armado a partir de TOPICS, para poder filtrar
+// el panel del profesor por parcial sin tener que repetir la lista a mano acá.
+function guiaNumToParcial(){
+  const map = {};
+  TOPICS.forEach(t => { map[t.num] = t.parcial; });
+  return map;
+}
+
+// Dado un string "guia" ya parseado por parseResultValue (ej. "Guía 8", o el texto de
+// "sin datos" cuando el intento es viejo), devuelve el número de guía si se puede
+// extraer, o null si no (intentos viejos sin ese dato).
+function extractGuiaNum(guiaStr){
+  const m = String(guiaStr || "").match(/(\d+)/);
+  return m ? parseInt(m[1], 10) : null;
+}
+
 async function loadAdminData(){
   const box = $("adminBody");
   if(!ADMIN_DATA_URL){
@@ -1605,6 +1621,18 @@ async function loadAdminData(){
 }
 
 function renderAdmin(rows){
+  // El panel del profesor solo debe mostrar los resultados del parcial activo
+  // (PARCIAL_ACTIVO). Los intentos de guías de otro parcial, y los intentos viejos
+  // de antes de que se guardara el número de guía (sin ese dato), quedan ocultos acá
+  // a pedido de Gustavo (2026-10-01), para no mezclar puntajes de un parcial con otro.
+  const numToParcial = guiaNumToParcial();
+  rows = rows.filter(r=>{
+    if(!r || !r.value) return false;
+    const { guia } = parseResultValue(r.value);
+    const num = extractGuiaNum(guia);
+    return num !== null && numToParcial[num] === PARCIAL_ACTIVO;
+  });
+
   const byCode = {};
   rows.forEach(r=>{
     if(!r || !r.code) return;
@@ -1613,8 +1641,12 @@ function renderAdmin(rows){
     byCode[code].push(r);
   });
 
+  // Además de ocultar los puntajes de otro parcial, el panel ahora solo lista a los
+  // alumnos habilitados para el parcial activo (HABILITADOS_PARCIAL2) — a pedido de
+  // Gustavo (2026-10-01). Los que no siguen a este parcial ya no aparecen en la lista
+  // (siguen en STUDENTS para no perder su historial, solo se ocultan acá).
   const codes = Object.keys(STUDENTS)
-    .filter(c => c !== TEACHER_CODE)
+    .filter(c => c !== TEACHER_CODE && HABILITADOS_PARCIAL2.has(c))
     .sort((a,b) => STUDENTS[a].localeCompare(STUDENTS[b], "es"));
 
   const box = $("adminBody");
