@@ -241,7 +241,7 @@
           <div class="submit-field"><span>Puntaje</span><b id="submitScore"></b></div>
         </div>
         <div class="submit-hint" id="submitStatus">Enviando resultado a tu profesor...</div>
-        <button class="btn btn-outline" id="submitBtn" onclick="sendResultManual()">Confirmar envío manualmente</button>
+        <button class="btn btn-outline" id="submitBtn" onclick="sendResultManual()" style="display:none">Confirmar envío manualmente</button>
       </div>
       <div class="result-actions">
         <button class="btn btn-gold" onclick="retryTopic()">Repetir este tema</button>
@@ -1576,9 +1576,16 @@ function renderTopics(){
 }
 
 // ---- Panel del profesor ----
+// El panel no se actualiza solo por arte de magia: si Gustavo lo deja abierto,
+// hay que volver a pedir los datos cada tanto para que aparezcan los intentos
+// nuevos sin que tenga que cerrar y volver a entrar.
+let adminRefreshInterval = null;
 function goAdmin(){
   show("screen-admin");
-  loadAdminData();
+  loadAdminData(false);
+  if(!adminRefreshInterval){
+    adminRefreshInterval = setInterval(()=>loadAdminData(true), 25000);
+  }
 }
 
 function parseResultValue(raw){
@@ -1642,9 +1649,12 @@ function parseFechaAR(s){
   return new Date(+y, +mo - 1, +d, +h, +mi, +(se || 0));
 }
 
-async function loadAdminData(){
+async function loadAdminData(silent){
   const box = $("adminBody");
-  box.innerHTML = `<p class="admin-status">Cargando resultados...</p>`;
+  // "silent" = refresco automático en segundo plano (ver goAdmin()/adminRefreshInterval):
+  // no mostramos "Cargando..." para no hacer parpadear la lista, y si falla no
+  // pisamos la tabla que ya se estaba viendo bien por un error transitorio de red.
+  if(!silent) box.innerHTML = `<p class="admin-status">Cargando resultados...</p>`;
   try {
     const res = await fetch(ADMIN_CSV_URL, { method: "GET", cache: "no-store" });
     if(!res.ok) throw new Error("HTTP " + res.status);
@@ -1659,6 +1669,7 @@ async function loadAdminData(){
       }));
     renderAdmin(rows);
   } catch(err){
+    if(silent) return; // error transitorio en un refresco de fondo: dejamos la tabla como estaba
     // Red de seguridad por si el CSV publicado deja de andar (por ejemplo si
     // Gustavo lo despublica sin querer): el panel sigue dando acceso directo
     // a la planilla real en vez de romperse en seco.
@@ -1702,12 +1713,21 @@ function renderAdmin(rows){
     .sort((a,b) => STUDENTS[a].localeCompare(STUDENTS[b], "es"));
 
   const box = $("adminBody");
+  // Antes de reconstruir la lista, anotamos qué alumnos tenía Gustavo desplegados
+  // (detalle visible) para volver a abrirlos después del refresco automático —
+  // si no, cada 25s se le cerraría solo lo que estaba mirando.
+  const expandedCodes = new Set(
+    [...box.querySelectorAll(".admin-item")]
+      .filter(it => { const d = it.querySelector(".admin-item-detail"); return d && !d.hidden; })
+      .map(it => it.dataset.code)
+  );
   box.innerHTML = "";
   codes.forEach(code=>{
     const attempts = (byCode[code] || []).slice().sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
 
     const item = document.createElement("div");
     item.className = "admin-item";
+    item.dataset.code = code;
     const summary = attempts.length
       ? `${attempts.length} intento${attempts.length===1?'':'s'}`
       : "sin intentos";
@@ -1737,6 +1757,7 @@ function renderAdmin(rows){
       detail.innerHTML = `<p class="admin-empty">Este alumno todavía no hizo ningún intento.</p>`;
     }
     item.querySelector(".admin-item-head").onclick = () => { detail.hidden = !detail.hidden; };
+    if(expandedCodes.has(code)) detail.hidden = false;
     box.appendChild(item);
   });
 }
@@ -1845,6 +1866,7 @@ function showResult(){
   $("submitScore").textContent = scoreTxt;
   $("submitBox").classList.remove("sent","error");
   $("submitStatus").textContent = "Enviando resultado a tu profesor...";
+  $("submitBtn").style.display = "none";
 
   show("screen-result");
   sendResultAuto(code, lastSubmitValue);
@@ -1855,10 +1877,12 @@ function showResult(){
 // salida de red hacia Google). Dentro de un Claude Artifact esta misma técnica
 // se probó en vivo y no salía ningún pedido de red — acá sí sale.
 //
-// Sigue siendo un POST "no-cors": el navegador no nos deja leer la respuesta
-// de Google (queda opaca), así que no hay forma de confirmar el éxito con
-// 100% de certeza desde JS. Por eso el botón "Confirmar envío manualmente"
-// queda siempre visible como respaldo — no se oculta ni en el caso "exitoso".
+// Es un POST "no-cors": el navegador no deja leer la respuesta de Google
+// (queda opaca), pero eso no significa que el envío sea opcional para el
+// alumno — se dispara solo, sin que tenga que tocar nada. El botón
+// "Confirmar envío manualmente" queda OCULTO por defecto (igual que en el
+// primer parcial) y solo aparece si el POST realmente falla (sin conexión,
+// bloqueado, etc.) — no como una opción visible de todos los intentos.
 function sendResultAuto(code, scoreTxt){
   try {
     const body = new URLSearchParams();
@@ -1873,16 +1897,19 @@ function sendResultAuto(code, scoreTxt){
     }).then(()=>{
       $("submitBox").classList.remove("error");
       $("submitBox").classList.add("sent");
-      $("submitStatus").textContent = "Resultado enviado a tu profesor ✓ (si tu profesor te avisa que no le llegó, tocá igual el botón de abajo para confirmarlo a mano).";
+      $("submitStatus").textContent = "Resultado enviado a tu profesor ✓";
+      $("submitBtn").style.display = "none";
     }).catch(()=>{
       $("submitBox").classList.remove("sent");
       $("submitBox").classList.add("error");
       $("submitStatus").textContent = "No se pudo enviar automáticamente — tocá el botón para confirmarlo a mano.";
+      $("submitBtn").style.display = "inline-block";
     });
   } catch(e){
     $("submitBox").classList.remove("sent");
     $("submitBox").classList.add("error");
     $("submitStatus").textContent = "No se pudo enviar automáticamente — tocá el botón para confirmarlo a mano.";
+    $("submitBtn").style.display = "inline-block";
   }
 }
 
